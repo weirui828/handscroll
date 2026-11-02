@@ -18,7 +18,7 @@ struct BatchView: View {
                     // never cuts through a thumbnail row
                     HStack(alignment: .top, spacing: 0) {
                         ScrollView {
-                            stepsSection.padding().frame(maxWidth: 360, alignment: .leading)
+                            stepsSection.padding().frame(maxWidth: 420, alignment: .leading)
                         }
                         Divider()
                         ScrollView {
@@ -198,7 +198,8 @@ struct FixView: View {
 
     var body: some View {
         NavigationStack {
-            EditorView(model: model, batch: nil, showBatch: $showBatch, shareRequest: $shareRequest, showsWordmark: false)
+            EditorView(model: model, batch: nil, showBatch: $showBatch, shareRequest: $shareRequest,
+                       showsWordmark: false, showsExportBar: false, hidesNavigationBar: false)
                 .navigationTitle("\(ctx.base) · step \(stepNumber)")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {

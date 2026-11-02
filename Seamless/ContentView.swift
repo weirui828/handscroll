@@ -16,7 +16,7 @@ struct ContentView: View {
                     StartView(pick: $pick, status: editor.status)
                 } else {
                     EditorView(model: editor, batch: batch, showBatch: $showBatch,
-                               shareRequest: $shareRequest)
+                               shareRequest: $shareRequest, onHelp: { showHelp = true })
                 }
             }
             .navigationTitle("")

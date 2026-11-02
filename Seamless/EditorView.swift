@@ -11,68 +11,94 @@ struct EditorView: View {
     var showsWordmark = true
     @Environment(HingeState.self) private var hinge
 
+    var onHelp: (() -> Void)?
+    var showsExportBar = true
+    var hidesNavigationBar = true
+
     var body: some View {
-        VStack(spacing: 0) {
-            if showsWordmark {
-                HStack {
-                    Text("Seamless")
-                        .font(.system(size: 17, weight: .semibold))
-                        .tracking(0.3)
-                        .foregroundStyle(DS.text)
-                    Spacer()
-                }
-                .padding(.horizontal, 16).padding(.top, 6).padding(.bottom, 2)
-            }
+        GeometryReader { geo in
+            let wide = geo.size.width >= 640 && (hinge.splitAtFold || geo.size.width > geo.size.height * 0.9)
+            let controlsWidth = min(400, geo.size.width * 0.42)
 
-            Picker("Mode", selection: $model.mode) {
-                ForEach(Mode.allCases) { Text($0.rawValue).tag($0) }
-            }
-            .pickerStyle(.segmented)
-            .padding(.horizontal, 12).padding(.vertical, 8)
-            .background(DS.bar)
-            Divider().overlay(DS.stroke)
-
-            GeometryReader { geo in
-                let wide = geo.size.width >= 640 && (hinge.splitAtFold || geo.size.width > geo.size.height * 0.9)
-                let controlsWidth = min(400, geo.size.width * 0.42)
-                let controls = VStack(spacing: 0) {
-                    ScrollView {
-                        Controls(model: model).padding(12)
+            let header = VStack(spacing: 0) {
+                if showsWordmark {
+                    HStack(spacing: 0) {
+                        Text("Seamless")
+                            .font(.system(size: 17, weight: .semibold))
+                            .tracking(0.3)
+                            .foregroundStyle(DS.text)
+                        Spacer()
+                        Button { showBatch = true } label: {
+                            Image(systemName: "square.stack.3d.up")
+                        }
+                        .buttonStyle(QuietBarButton())
+                        .accessibilityLabel("Batch")
+                        if let onHelp {
+                            Button(action: onHelp) {
+                                Image(systemName: "questionmark.circle")
+                            }
+                            .buttonStyle(QuietBarButton())
+                            .accessibilityLabel("Help")
+                        }
                     }
-                    .scrollBounceBehavior(.basedOnSize)
+                    .padding(.horizontal, 12).padding(.top, 4)
+                }
+                Picker("Mode", selection: $model.mode) {
+                    ForEach(Mode.allCases) { Text($0.rawValue).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal, 12).padding(.vertical, 6)
+                Divider().overlay(DS.stroke)
+            }
+            .background(DS.bar)
+
+            let column = VStack(spacing: 0) {
+                header
+                ScrollView {
+                    Controls(model: model).padding(12)
+                }
+                .scrollBounceBehavior(.basedOnSize)
+                if showsExportBar {
                     Divider().overlay(DS.stroke)
                     ExportActions(model: model, batch: batch,
                                   showBatch: $showBatch, shareRequest: $shareRequest)
                 }
-                .background(DS.bg)
+            }
+            .background(DS.bg)
 
-                if #available(iOS 27.1, *), hinge.splitAtFold {
-                    ArrangementView {
-                        CanvasView(model: model)
-                    } secondary: {
-                        controls
+            if #available(iOS 27.1, *), hinge.splitAtFold {
+                ArrangementView {
+                    CanvasView(model: model)
+                } secondary: {
+                    column
+                }
+                .arrangementViewStyle(.split)
+            } else if wide {
+                HStack(spacing: 0) {
+                    CanvasView(model: model)
+                    Divider().overlay(DS.stroke)
+                    column.frame(width: controlsWidth)
+                }
+            } else {
+                VStack(spacing: 0) {
+                    header
+                    CanvasView(model: model)
+                        .frame(height: max(180, min(420, geo.size.height * 0.46)))
+                    Divider().overlay(DS.stroke)
+                    ScrollView {
+                        Controls(model: model).padding(12)
                     }
-                    .arrangementViewStyle(.split)
-                } else if wide {
-                    HStack(spacing: 0) {
-                        CanvasView(model: model)
+                    .scrollBounceBehavior(.basedOnSize)
+                    if showsExportBar {
                         Divider().overlay(DS.stroke)
-                        controls.frame(width: controlsWidth)
-                    }
-                } else {
-                    VStack(spacing: 0) {
-                        CanvasView(model: model)
-                            .frame(height: max(180, min(360, geo.size.height * 0.44)))
-                        Divider().overlay(DS.stroke)
-                        controls
+                        ExportActions(model: model, batch: batch,
+                                      showBatch: $showBatch, shareRequest: $shareRequest)
                     }
                 }
             }
         }
         .background(DS.bg)
-        .toolbarBackground(DS.bar, for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
-        .toolbar(.visible, for: .navigationBar)
+        .toolbar(hidesNavigationBar ? .hidden : .visible, for: .navigationBar)
     }
 }
 
