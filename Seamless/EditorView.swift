@@ -459,7 +459,7 @@ private struct ExportActions: View {
                         Button {
                             if let step = model.captureStep() { flash(batch.add(step)) }
                         } label: {
-                            Label("Add this setting", systemImage: "plus.circle")
+                            Label("Add to batch", systemImage: "plus.circle")
                         }
                         .disabled(model.busy || batch.steps.count >= maxSteps)
 
