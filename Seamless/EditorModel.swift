@@ -81,6 +81,18 @@ final class EditorModel {
         blurCache = [:]
     }
 
+#if DEBUG
+    /// Loads the bundled sample photo, so the editor can be opened without the picker.
+    func loadDemo(named name: String = "demo") {
+        guard let url = Bundle.main.url(forResource: name, withExtension: "jpg"),
+              let data = try? Data(contentsOf: url),
+              let img = Renderer.decode(data) else { return }
+        sourceItem = nil
+        setPhoto(img, base: name)
+        reset()
+    }
+#endif
+
     // MARK: Layout
 
     func reset() {

@@ -17,7 +17,9 @@ struct EditorView: View {
 
     var body: some View {
         GeometryReader { geo in
-            let wide = geo.size.width >= 640 && (hinge.splitAtFold || geo.size.width > geo.size.height * 0.9)
+            // a wide, on-purpose window gets two panes; everything else stacks with the
+            // header at the top, so the wordmark never floats in the middle of the screen
+            let sideBySide = geo.size.width >= 640 && geo.size.width > geo.size.height * 0.9
             let controlsWidth = min(400, geo.size.width * 0.42)
 
             let header = VStack(spacing: 0) {
@@ -52,8 +54,7 @@ struct EditorView: View {
             }
             .background(DS.bar)
 
-            let column = VStack(spacing: 0) {
-                header
+            let controls = VStack(spacing: 0) {
                 ScrollView {
                     Controls(model: model).padding(12)
                 }
@@ -64,36 +65,22 @@ struct EditorView: View {
                                   showBatch: $showBatch, shareRequest: $shareRequest)
                 }
             }
-            .background(DS.bg)
 
-            if #available(iOS 27.1, *), hinge.splitAtFold {
-                ArrangementView {
-                    CanvasView(model: model)
-                } secondary: {
-                    column
-                }
-                .arrangementViewStyle(.split)
-            } else if wide {
+            if sideBySide {
                 HStack(spacing: 0) {
                     CanvasView(model: model)
                     Divider().overlay(DS.stroke)
-                    column.frame(width: controlsWidth)
+                    VStack(spacing: 0) { header; controls }
+                        .frame(width: controlsWidth)
+                        .background(DS.bg)
                 }
             } else {
                 VStack(spacing: 0) {
                     header
                     CanvasView(model: model)
-                        .frame(height: max(180, min(420, geo.size.height * 0.46)))
+                        .frame(height: max(180, min(340, geo.size.height * 0.38)))
                     Divider().overlay(DS.stroke)
-                    ScrollView {
-                        Controls(model: model).padding(12)
-                    }
-                    .scrollBounceBehavior(.basedOnSize)
-                    if showsExportBar {
-                        Divider().overlay(DS.stroke)
-                        ExportActions(model: model, batch: batch,
-                                      showBatch: $showBatch, shareRequest: $shareRequest)
-                    }
+                    controls
                 }
             }
         }

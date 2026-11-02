@@ -44,6 +44,15 @@ struct ContentView: View {
         .background(DS.bg)
         .environment(hinge)
         .background(HingeReader(state: hinge))
+        .task {
+            #if DEBUG
+            let args = ProcessInfo.processInfo.arguments
+            if editor.photo == nil, args.contains("-demoPhoto") { editor.loadDemo() }
+            if let i = args.firstIndex(of: "-demoMode"), i + 1 < args.count,
+               let mode = Mode(rawValue: args[i + 1]) { editor.mode = mode }
+            if args.contains("-demoBatch") { showBatch = true }
+            #endif
+        }
         .onChange(of: showBatch) { _, showing in
             // the photo open in the editor belongs in the batch, so take it along
             guard showing, let item = editor.sourceItem, !batch.contains(item) else { return }
