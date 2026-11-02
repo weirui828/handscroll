@@ -246,17 +246,9 @@ struct Controls: View {
 
     @ViewBuilder
     private func imageControls(_ geo: Geometry) -> some View {
-        if model.mode == .carousel {
-            countGrid(geo)
-        } else {
-            group("Shape") {
-                AdaptivePicker("Shape", selection: shapeBinding) {
-                    ForEach(Shape.allCases.filter { $0 != .auto }) { Text($0.rawValue).tag($0) }
-                }
-            }
-        }
+        if model.mode == .carousel { countGrid(geo) }
 
-        group("Position") {
+        group("Position", accessory: model.mode == .carousel ? nil : AnyView(shapeMenu(includeAuto: false))) {
             if let f = model.currentFrame {
                 HStack {
                     Text("Zoom")
@@ -296,10 +288,10 @@ struct Controls: View {
         Binding(get: { model.layout.shape }, set: { model.setShape($0) })
     }
 
-    private var shapeMenu: some View {
+    private func shapeMenu(includeAuto: Bool = true) -> some View {
         Menu {
             Picker("Shape", selection: shapeBinding) {
-                ForEach(Shape.allCases) { Text($0.rawValue).tag($0) }
+                ForEach(includeAuto ? Shape.allCases : Shape.allCases.filter { $0 != .auto }) { Text($0.rawValue).tag($0) }
             }
         } label: {
             HStack(spacing: 4) {
@@ -321,7 +313,7 @@ struct Controls: View {
             HStack {
                 Text("Slides").font(.subheadline.weight(.semibold)).foregroundStyle(DS.secondary)
                 Spacer()
-                shapeMenu
+                shapeMenu()
             }
             LazyVGrid(columns: [GridItem(.adaptive(minimum: slideWidth), spacing: 8)], spacing: 8) {
                 ForEach(2...maxSlides, id: \.self) { n in
@@ -375,9 +367,14 @@ struct Controls: View {
 
     // MARK: Export and batch
 
-    private func group<Content: View>(_ title: String, @ViewBuilder _ content: () -> Content) -> some View {
+    private func group<Content: View>(_ title: String, accessory: AnyView? = nil,
+                                     @ViewBuilder _ content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(DS.secondary)
+            HStack {
+                Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(DS.secondary)
+                Spacer()
+                accessory
+            }
             content()
         }
         .padding(14)
