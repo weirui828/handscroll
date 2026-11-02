@@ -391,9 +391,10 @@ struct Controls: View {
     @ViewBuilder
     private var reelControls: some View {
         group("Reel") {
-            HStack {
-                rowLabel("Pan")
-                Spacer()
+            HStack(spacing: 10) {
+                rowLabel("Pan").frame(width: 58, alignment: .leading)
+                RangeSlider(lower: $model.reel.p0, upper: $model.reel.p1)
+                    .frame(height: 34)
                 Toggle("Reverse", isOn: Binding(get: { model.reel.p1 < model.reel.p0 },
                                                set: { reversePan(model, $0) }))
                     .labelsHidden()
@@ -401,42 +402,31 @@ struct Controls: View {
                     .controlSize(.mini)
                     .accessibilityLabel("Reverse")
             }
-            RangeSlider(lower: $model.reel.p0, upper: $model.reel.p1)
-                .frame(height: 34)
 
-            rowDivider
+            inlineSlider("Vertical", value: $model.reel.v, range: 0...1, text: verticalLabel)
 
-            HStack {
-                rowLabel("Vertical")
-                Spacer()
-                rowValue(verticalLabel)
-            }
-            Slider(value: $model.reel.v, in: 0...1)
+            inlineSlider("Zoom to", value: Binding(get: { model.reel.z1 },
+                                                  set: { model.reel.z1 = $0; model.reel.z0 = 1 }),
+                         range: 1...1.6,
+                         text: "\(Int((model.reel.z1 * 100).rounded()))%")
 
-            rowDivider
-
-            HStack {
-                rowLabel("Zoom to")
-                Spacer()
-                rowValue("\(Int((model.reel.z1 * 100).rounded()))%")
-            }
-            Slider(value: Binding(get: { model.reel.z1 },
-                                  set: { model.reel.z1 = $0; model.reel.z0 = 1 }), in: 1...1.6)
-
-            rowDivider
-
-            HStack {
-                rowLabel("Length")
-                Spacer()
-                rowValue("\(Int(model.reel.dur)) s")
-            }
-            Slider(value: Binding(get: { model.reel.dur },
-                                  set: { model.reel.dur = $0.rounded(); model.reelT = min(model.reelT, model.reel.dur) }),
-                   in: 3...30)
+            inlineSlider("Length", value: Binding(get: { model.reel.dur },
+                                                 set: { model.reel.dur = $0.rounded(); model.reelT = min(model.reelT, model.reel.dur) }),
+                         range: 3...30,
+                         text: "\(Int(model.reel.dur)) s")
 
             Toggle("Ease in and out", isOn: $model.reel.ease)
                 .font(.footnote)
                 .tint(DS.ink)
+        }
+    }
+
+    private func inlineSlider(_ label: String, value: Binding<Double>,
+                              range: ClosedRange<Double>, text: String) -> some View {
+        HStack(spacing: 10) {
+            rowLabel(label).frame(width: 58, alignment: .leading)
+            Slider(value: value, in: range)
+            rowValue(text).frame(width: 42, alignment: .trailing)
         }
     }
 
@@ -451,10 +441,6 @@ struct Controls: View {
 
     private func rowValue(_ text: String) -> some View {
         Text(text).font(.footnote).foregroundStyle(DS.secondary).monospacedDigit()
-    }
-
-    private var rowDivider: some View {
-        Rectangle().fill(DS.stroke).frame(height: 1).padding(.vertical, 2)
     }
 
     // MARK: Export and batch
