@@ -87,7 +87,7 @@ struct EditorView: View {
                             })
                     }
                     .scrollBounceBehavior(.basedOnSize)
-                    .frame(height: min(max(controlsHeight, 120), geo.size.height * (compact ? 0.45 : 0.55)))
+                    .frame(height: min(max(controlsHeight, 0), geo.size.height * (compact ? 0.45 : 0.55)))
                     .onPreferenceChange(ControlsHeightKey.self) { controlsHeight = $0 }
                     if showsExportBar {
                         Divider().overlay(DS.stroke)
@@ -224,6 +224,20 @@ struct CanvasView: View {
                             .foregroundStyle(DS.secondary)
                         }
                         .accessibilityLabel("Output size")
+
+                        Menu {
+                            Button("Fit") { model.wholePhoto() }
+                            Button("Fill") { model.fillFrame() }
+                        } label: {
+                            HStack(spacing: 3) {
+                                Text(model.showsWholePhoto ? "Fit" : "Fill")
+                                Image(systemName: "chevron.up.chevron.down").font(.system(size: 8, weight: .semibold))
+                            }
+                            .font(.footnote)
+                            .foregroundStyle(DS.secondary)
+                            .frame(minHeight: 44)
+                        }
+                        .accessibilityLabel("Frame")
 
                         if model.leavesGap {
                             Button { showFill = true } label: {
@@ -376,38 +390,10 @@ struct Controls: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             if let geo = model.geo {
-                if model.mode == .reel { reelControls } else { imageControls(geo) }
+                if model.mode == .reel { reelControls }
             }
 
             if let s = model.status { Text(s).font(.footnote).foregroundStyle(.secondary) }
-        }
-    }
-
-    // MARK: Carousel, Fit, Crop
-
-    @ViewBuilder
-    private func imageControls(_ geo: Geometry) -> some View {
-        group("Position") {
-            if let f = model.currentFrame {
-                HStack(spacing: 10) {
-                    rowLabel("Zoom").frame(width: 58, alignment: .leading)
-                    Slider(value: Binding(get: { model.layout.zoom }, set: { model.setZoom($0) }),
-                           in: geo.zoomRange(f))
-                    rowValue("\(Int((model.layout.zoom * 100).rounded()))%")
-                        .frame(width: 42, alignment: .trailing)
-                }
-            }
-
-            HStack(spacing: 10) {
-                rowLabel("Frame").frame(width: 58, alignment: .leading)
-                Picker("Frame", selection: Binding(get: { model.showsWholePhoto },
-                                                  set: { whole in whole ? model.wholePhoto() : model.fillFrame() })) {
-                    Text("Fit").tag(true)
-                    Text("Fill").tag(false)
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-            }
         }
     }
 
