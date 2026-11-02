@@ -120,7 +120,7 @@ struct HelpView: View {
             .h("Pan"),
             .p("**Start** and **End** set the position at the start and at the end of the video. 0% is the left edge of the photo. 100% is the right edge."),
             .ul(["To move in the opposite direction, set **Start** to a value that is larger than **End**.",
-                 "If the photo is tall, use **Up/down** to select the part of the photo that the video shows."]),
+                 "If the photo is tall, use **Vertical** to select the part of the photo that the video shows."]),
             .h("Zoom and timing"),
             .ul(["Zoom **Start** and **End** set the zoom at the start and at the end of the video. Use different values to move slowly in or out.",
                  "**Length** sets the duration of the video, from 3 to 30 seconds.",
