@@ -436,6 +436,7 @@ struct Controls: View {
 
             Toggle("Ease in and out", isOn: $model.reel.ease)
                 .font(.footnote)
+                .foregroundStyle(DS.secondary)
         }
     }
 
