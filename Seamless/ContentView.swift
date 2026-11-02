@@ -22,7 +22,9 @@ struct ContentView: View {
                     StartView(pick: $pick, status: editor.status, onHelp: { showHelp = true })
                 } else {
                     EditorView(model: editor, batch: batch, showBatch: $showBatch,
-                               shareRequest: $shareRequest, showsWordmark: true,
+                               shareRequest: $shareRequest,
+                               showsWordmark: true,
+                               pick: $pick,
                                accent: Color(UIColor(hex: accentHex)),
                                onHelp: { showHelp = true })
                 }
@@ -31,22 +33,6 @@ struct ContentView: View {
         .toolbarBackground(DS.bar, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar(editor.photo == nil ? .hidden : .visible, for: .navigationBar)
-            .toolbar {
-                if editor.photo != nil {
-                    ToolbarItem(placement: .topBarLeading) {
-                        PhotosPicker(selection: $pick, matching: .images, photoLibrary: .shared()) {
-                            Label("New photo", systemImage: "photo.badge.plus")
-                        }
-                    }
-                }
-                if editor.photo != nil {
-                    ToolbarItemGroup(placement: .topBarTrailing) {
-                        Button { showBatch = true } label: { Label("Batch", systemImage: "square.stack.3d.up") }
-                        Button { showHelp = true } label: { Label("Help", systemImage: "questionmark.circle") }
-                    }
-                }
-            }
             .navigationDestination(isPresented: $showBatch) {
                 BatchView(batch: batch, shareRequest: $shareRequest)
             }
@@ -116,6 +102,7 @@ struct StartView: View {
         .scrollBounceBehavior(.basedOnSize)
         .defaultScrollAnchor(.center)
         .background(DS.bg)
+        .toolbar(.hidden, for: .navigationBar)
     }
 }
 

@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 
 /// The canvas and the controls sit in two separate panes. When the window is wide
 /// (iPad, landscape, or an unfolded screen) the panes sit side by side, so a fold
@@ -9,6 +10,7 @@ struct EditorView: View {
     @Binding var showBatch: Bool
     @Binding var shareRequest: ShareRequest?
     var showsWordmark = true
+    var pick: Binding<PhotosPickerItem?>? = nil
     var accent: Color = DS.ink
     @Environment(HingeState.self) private var hinge
     @State private var controlsHeight: CGFloat = 0
@@ -33,6 +35,13 @@ struct EditorView: View {
                             .tracking(0.3)
                             .foregroundStyle(DS.text)
                         Spacer()
+                        if let pick {
+                            PhotosPicker(selection: pick, matching: .images, photoLibrary: .shared()) {
+                                Image(systemName: "photo.badge.plus")
+                            }
+                            .buttonStyle(QuietBarButton())
+                            .accessibilityLabel("New photo")
+                        }
                         if let onHelp {
                             Button(action: onHelp) {
                                 Image(systemName: "questionmark.circle")
