@@ -421,8 +421,10 @@ private struct ExportActions: View {
     @State private var showResult = false
     @State private var note: String?
     @State private var noteTask: Task<Void, Never>?
-    @State private var flying: Int?
+    @State private var flying = false
     @State private var flyX: CGFloat = -154
+    @State private var flyScale: CGFloat = 1
+    @State private var flyAlpha: CGFloat = 1
     @State private var badgeBump = false
 
     private var currentStep: Step? { model.captureStep() }
@@ -435,13 +437,20 @@ private struct ExportActions: View {
         flash(text)
         badgeBump = true
         Task { try? await Task.sleep(for: .seconds(0.3)); badgeBump = false }
-        // the plus sits one slot left of the batch icon; hop the count across
-        flying = batch.steps.count
+        // the plus sits one slot left of the batch icon; the step slides across and shrinks in
+        flying = true
         flyX = -154
-        withAnimation(.easeInOut(duration: 0.42)) { flyX = -110 }
+        flyScale = 1
+        flyAlpha = 0.95
+        withAnimation(.easeInOut(duration: 0.4)) {
+            flyX = -110
+            flyScale = 0.45
+        }
         Task {
-            try? await Task.sleep(for: .seconds(0.46))
-            withAnimation(.easeOut(duration: 0.15)) { flying = nil }
+            try? await Task.sleep(for: .seconds(0.3))
+            withAnimation(.easeIn(duration: 0.12)) { flyAlpha = 0 }
+            try? await Task.sleep(for: .seconds(0.2))
+            flying = false
             flyX = -154
         }
     }
@@ -529,12 +538,14 @@ private struct ExportActions: View {
                 .accessibilityLabel("Save")
             }
             .overlay(alignment: .trailing) {
-                if let flying {
-                    Text("\(flying)")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(DS.onInk)
-                        .frame(width: 17, height: 17)
-                        .background(DS.ink, in: Circle())
+                if flying {
+                    // one step reads as a small slide, not as a digit
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(DS.ink)
+                        .frame(width: 9, height: 13)
+                        .overlay(RoundedRectangle(cornerRadius: 3).stroke(DS.onInk.opacity(0.35), lineWidth: 1))
+                        .scaleEffect(flyScale)
+                        .opacity(flyAlpha)
                         .offset(x: flyX, y: -14)
                         .allowsHitTesting(false)
                 }
