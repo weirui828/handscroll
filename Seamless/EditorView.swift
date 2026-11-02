@@ -228,7 +228,9 @@ struct CanvasView: View {
                     let isReel = model.mode == .reel
                     let aw = isReel ? reelSize.width : frame.fw
                     let ah = isReel ? reelSize.height : frame.fh
-                    let fit = max(0.001, min(max(1, geo.size.width - 24) / aw, max(1, geo.size.height - 12) / ah))
+                    // the grips sit 10 pt past the photo edges, so leave that much room
+                    let verticalMargin: CGFloat = isReel ? 12 : 44
+                    let fit = max(0.001, min(max(1, geo.size.width - 24) / aw, max(1, geo.size.height - verticalMargin) / ah))
                     let w = aw * fit, h = ah * fit
                     let photoTop = (geo.size.height - h) / 2
                     let photoLeft = (geo.size.width - w) / 2
