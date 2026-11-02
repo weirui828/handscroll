@@ -372,21 +372,26 @@ struct Controls: View {
     private func imageControls(_ geo: Geometry) -> some View {
         group("Position") {
             if let f = model.currentFrame {
-                HStack {
-                    Text("Zoom")
-                    Slider(value: Binding(get: { model.layout.zoom }, set: { model.setZoom($0) }), in: geo.zoomRange(f))
+                HStack(spacing: 10) {
+                    rowLabel("Zoom").frame(width: 58, alignment: .leading)
+                    Slider(value: Binding(get: { model.layout.zoom }, set: { model.setZoom($0) }),
+                           in: geo.zoomRange(f))
+                    rowValue("\(Int((model.layout.zoom * 100).rounded()))%")
+                        .frame(width: 42, alignment: .trailing)
                 }
             }
-            Picker("Fit", selection: Binding(get: { model.showsWholePhoto },
-                                            set: { whole in whole ? model.wholePhoto() : model.fillFrame() })) {
-                Text("Fit").tag(true)
-                Text("Fill").tag(false)
+
+            HStack(spacing: 10) {
+                rowLabel("Frame").frame(width: 58, alignment: .leading)
+                Picker("Frame", selection: Binding(get: { model.showsWholePhoto },
+                                                  set: { whole in whole ? model.wholePhoto() : model.fillFrame() })) {
+                    Text("Fit").tag(true)
+                    Text("Fill").tag(false)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
             }
-            .pickerStyle(.segmented)
         }
-
-
-
     }
 
     // MARK: Reel
