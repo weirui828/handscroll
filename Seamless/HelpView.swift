@@ -7,7 +7,7 @@ enum HelpTab: String, CaseIterable, Identifiable {
 }
 
 private enum Block {
-    case p(String), h(String), ul([String]), ol([String]), note(String)
+    case p(String), h(String), ul([String]), ol([String]), note(String), img(String)
 }
 
 struct HelpView: View {
@@ -103,6 +103,13 @@ struct HelpView: View {
             VStack(alignment: .leading, spacing: 6) {
                 ForEach(Array(items.enumerated()), id: \.offset) { _, t in HStack(alignment: .firstTextBaseline) { Text("•"); Text(.init(t)) } }
             }
+        case .img(let name):
+            Image(name)
+                .resizable()
+                .scaledToFit()
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .overlay(RoundedRectangle(cornerRadius: 10).stroke(DS.stroke, lineWidth: 1))
+                .padding(.vertical, 4)
         case .ol(let items):
             VStack(alignment: .leading, spacing: 6) {
                 ForEach(Array(items.enumerated()), id: \.offset) { i, t in HStack(alignment: .firstTextBaseline) { Text("\(i + 1)."); Text(.init(t)) } }
@@ -120,6 +127,7 @@ struct HelpView: View {
                  "Drag the small handle at the end of that line to the right to add a slide.",
                  "Drag it to the left to remove a slide. You can have 2 to 5 slides."]),
             .p("The line below the photo shows the number of slides and the size of each slide."),
+            .img("help-carousel"),
             .h("Change the shape"),
             .ol(["Find the corner marks at the bottom right of the photo.",
                  "Drag the corner down for a taller slide, or up for a wider slide.",
@@ -160,6 +168,7 @@ struct HelpView: View {
             .p("Reel makes a short video that moves slowly across the photo."),
             .h("Play"),
             .p("Tap the play button in the middle of the photo. While the video plays, a thin bar at the bottom of the photo shows the position. Tap again to pause."),
+            .img("help-reel"),
             .h("Pan"),
             .ul(["The two ends set where the video starts and where it ends.",
                  "The start end has a small dot. Drag an end to move it.",
