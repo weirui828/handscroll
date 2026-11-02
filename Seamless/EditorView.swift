@@ -91,6 +91,7 @@ struct CanvasView: View {
     @State private var pinchStart: CGFloat?
     @State private var countStart: Int?
     @State private var shapeStart: CGFloat?
+    @State private var showFill = false
 
     var body: some View {
         VStack(spacing: 6) {
@@ -180,24 +181,39 @@ struct CanvasView: View {
             }
             .clipped()
             VStack(spacing: 2) {
-                if model.mode == .reel {
-                    Text(model.sizeText).font(.footnote).foregroundStyle(DS.secondary)
-                } else {
-                    Menu {
-                        Picker("Size", selection: $model.outW) {
-                            ForEach(model.sizeChoices, id: \.width) { c in
-                                Text("\(c.width) × \(c.height) px").tag(CGFloat(c.width))
+                HStack(spacing: 20) {
+                    if model.mode == .reel {
+                        Text(model.sizeText).font(.footnote).foregroundStyle(DS.secondary)
+                    } else {
+                        Menu {
+                            Picker("Size", selection: $model.outW) {
+                                ForEach(model.sizeChoices, id: \.width) { c in
+                                    Text("\(c.width) × \(c.height) px").tag(CGFloat(c.width))
+                                }
                             }
+                        } label: {
+                            HStack(spacing: 3) {
+                                Text(model.sizeText)
+                                Image(systemName: "chevron.up.chevron.down").font(.system(size: 8, weight: .semibold))
+                            }
+                            .font(.footnote)
+                            .foregroundStyle(DS.secondary)
                         }
-                    } label: {
-                        HStack(spacing: 3) {
-                            Text(model.sizeText)
-                            Image(systemName: "chevron.up.chevron.down").font(.system(size: 8, weight: .semibold))
+                        .accessibilityLabel("Output size")
+
+                        if model.leavesGap {
+                            Button { showFill = true } label: {
+                                HStack(spacing: 3) {
+                                    Text(model.look.fill.rawValue)
+                                    Image(systemName: "chevron.up.chevron.down").font(.system(size: 8, weight: .semibold))
+                                }
+                                .font(.footnote)
+                                .foregroundStyle(DS.secondary)
+                                .frame(minHeight: 44)
+                            }
+                            .accessibilityLabel("Fill")
                         }
-                        .font(.footnote)
-                        .foregroundStyle(DS.secondary)
                     }
-                    .accessibilityLabel("Output size")
                 }
                 if model.tallWarning {
                     Text("Too tall for scheduling tools. Post from the Instagram app.")
@@ -210,6 +226,11 @@ struct CanvasView: View {
         .padding(inset)
         .background(DS.bg)
         .clipped()
+        .sheet(isPresented: $showFill) {
+            FillSheet(model: model)
+                .presentationDetents([.height(240), .medium])
+                .presentationDragIndicator(.visible)
+        }
     }
 
     private func drag(w: CGFloat, h: CGFloat) -> some Gesture {
@@ -332,23 +353,6 @@ struct Controls: View {
             .pickerStyle(.segmented)
         }
 
-        if model.leavesGap {
-            group("Empty space") {
-                AdaptivePicker("Fill", selection: $model.look.fill) {
-                    ForEach(Fill.allCases) { Text($0.rawValue).tag($0) }
-                }
-                if model.look.fill == .blur {
-                    LabeledSlider(title: "Darken", value: Binding(get: { Double(model.look.dim) }, set: { model.look.dim = CGFloat($0) }),
-                                  range: 0...0.7) { "\(Int($0 * 100))%" }
-                }
-                if model.look.fill == .color {
-                    ColorPicker("Color", selection: Binding(
-                        get: { Color(UIColor(hex: model.look.colorHex)) },
-                        set: { model.look.colorHex = UIColor($0).hexString }))
-                }
-            }
-
-        }
 
 
     }
@@ -416,6 +420,44 @@ struct AdaptivePicker<Selection: Hashable, Choices: View>: View {
                 .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
         }
         .frame(maxWidth: .infinity)
+    }
+}
+
+private struct FillSheet: View {
+    @Bindable var model: EditorModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            Text("Empty space")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(DS.secondary)
+
+            Picker("Fill", selection: $model.look.fill) {
+                ForEach(Fill.allCases) { Text($0.rawValue).tag($0) }
+            }
+            .pickerStyle(.segmented)
+
+            if model.look.fill == .blur {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text("Darken").font(.footnote).foregroundStyle(DS.secondary)
+                        Spacer()
+                        Text("\(Int(model.look.dim * 100))%").font(.footnote).foregroundStyle(DS.secondary)
+                    }
+                    Slider(value: Binding(get: { Double(model.look.dim) }, set: { model.look.dim = CGFloat($0) }), in: 0...0.7)
+                }
+            }
+
+            if model.look.fill == .color {
+                ColorPicker("Color", selection: Binding(
+                    get: { Color(UIColor(hex: model.look.colorHex)) },
+                    set: { model.look.colorHex = UIColor($0).hexString }))
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(20)
+        .background(DS.bg)
     }
 }
 
