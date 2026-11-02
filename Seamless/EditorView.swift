@@ -525,13 +525,14 @@ struct RangeSlider: View {
     var accent: Color = DS.ink
     var onEdit: (() -> Void)?
 
-    private let knob: CGFloat = 28
+    private let knobWidth: CGFloat = 18
+    private let knobHeight: CGFloat = 28
 
     var body: some View {
         GeometryReader { geo in
             let width = geo.size.width
             let span = range.upperBound - range.lowerBound
-            let usable = max(1, width - knob)
+            let usable = max(1, width - knobWidth)
             let lx = CGFloat((lower - range.lowerBound) / span) * usable
             let ux = CGFloat((upper - range.lowerBound) / span) * usable
             let lo = min(lx, ux), hi = max(lx, ux)
@@ -539,10 +540,10 @@ struct RangeSlider: View {
             ZStack(alignment: .leading) {
                 Capsule().fill(DS.stroke)
                     .frame(height: 4)
-                    .padding(.horizontal, knob / 2)
+                    .padding(.horizontal, knobWidth / 2)
                 Capsule().fill(accent)
                     .frame(width: hi - lo, height: 4)
-                    .offset(x: lo + knob / 2)
+                    .offset(x: lo + knobWidth / 2)
 
                 knobView(isStart: true)
                     .offset(x: lx)
@@ -559,16 +560,16 @@ struct RangeSlider: View {
         }
     }
 
-    /// The same white knob as a native slider; the start one carries a small accent dot.
+    /// The same pill thumb a native slider uses; the start one carries a small accent dot.
     private func knobView(isStart: Bool) -> some View {
-        Circle()
+        Capsule()
             .fill(DS.card)
-            .frame(width: knob, height: knob)
+            .frame(width: knobWidth, height: knobHeight)
             .shadow(color: .black.opacity(0.12), radius: 3, y: 1)
-            .overlay(Circle().stroke(DS.stroke, lineWidth: 1))
+            .overlay(Capsule().stroke(DS.stroke, lineWidth: 1))
             .overlay {
                 if isStart {
-                    Circle().fill(accent).frame(width: 8, height: 8)
+                    Circle().fill(accent).frame(width: 6, height: 6)
                 }
             }
     }
