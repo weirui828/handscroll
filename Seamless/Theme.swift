@@ -76,5 +76,6 @@ enum Palette {
         .init(name: "Sand",  hex: "#D6D2C4"),   // Pantone 7527 C
         .init(name: "Mauve", hex: "#B3AACD"),   // Pantone 2645 C
         .init(name: "Teal",  hex: "#8FA6A3"),   // Pantone 5493 C
+        .init(name: "Deep",  hex: "#5E6C74"),   // Pantone 7546 C
     ]
 }
