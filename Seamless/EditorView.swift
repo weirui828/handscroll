@@ -101,20 +101,22 @@ struct CanvasView: View {
                     ZStack {
                         Image(uiImage: img).resizable().frame(width: w, height: h)
                             .overlay(alignment: .bottom) {
-                                if isReel {
+                                if isReel && model.playing {
                                     let progress = model.reel.dur > 0 ? min(1, max(0, model.reelT / model.reel.dur)) : 0
+                                    let barWidth = min(132, max(0, w - 24))
                                     ZStack(alignment: .leading) {
                                         Capsule()
-                                            .fill(.white.opacity(0.22))
+                                            .fill(.white.opacity(0.12))
                                             .background(.ultraThinMaterial, in: Capsule())
                                         Capsule()
-                                            .fill(.white.opacity(0.92))
-                                            .frame(width: max(0, (w - 24) * progress))
+                                            .fill(.white.opacity(0.55))
+                                            .frame(width: barWidth * progress)
                                     }
-                                    .frame(width: max(0, w - 24), height: 4)
-                                    .padding(.bottom, 10)
+                                    .frame(width: barWidth, height: 3)
+                                    .padding(.bottom, 8)
                                     .animation(.linear(duration: 0.08), value: progress)
                                     .allowsHitTesting(false)
+                                    .transition(.opacity)
                                 }
                             }
                         if isReel {
