@@ -62,7 +62,10 @@ struct EditorView: View {
                         Spacer()
                         iconRow
                     }
-                    .padding(.leading, 12).padding(.trailing, 12).padding(.top, 4)
+                    // In the two-pane layout the window top is the screen edge, so the
+                    // header needs its own margin from the top.
+                    .padding(.leading, 12).padding(.trailing, 12)
+                    .padding(.top, sideBySide ? 20 : 4)
 
                 }
                 Picker("Mode", selection: $model.mode) {
