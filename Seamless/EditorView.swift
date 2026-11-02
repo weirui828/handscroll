@@ -415,6 +415,30 @@ private struct ExportActions: View {
     @State private var showResult = false
     @State private var note: String?
     @State private var noteTask: Task<Void, Never>?
+    @State private var flying: Int?
+    @State private var flyX: CGFloat = -154
+    @State private var badgeBump = false
+
+    private var currentStep: Step? { model.captureStep() }
+
+    /// Adds the current settings, then lets a little count travel from the plus to the
+    /// batch icon so the two controls read as one thing.
+    private func addToBatch(added: Bool) {
+        guard let batch, !added, let step = currentStep else { return }
+        let text = batch.add(step)
+        flash(text)
+        badgeBump = true
+        Task { try? await Task.sleep(for: .seconds(0.3)); badgeBump = false }
+        // the plus sits one slot left of the batch icon; hop the count across
+        flying = batch.steps.count
+        flyX = -154
+        withAnimation(.easeInOut(duration: 0.42)) { flyX = -110 }
+        Task {
+            try? await Task.sleep(for: .seconds(0.46))
+            withAnimation(.easeOut(duration: 0.15)) { flying = nil }
+            flyX = -154
+        }
+    }
 
     /// Shows the result of a batch action for a moment, then takes it away again.
     private func flash(_ text: String) {
@@ -441,16 +465,20 @@ private struct ExportActions: View {
                     .transition(.opacity)
             }
 
-            HStack(spacing: 2) {
+            HStack(spacing: 0) {
+                Spacer(minLength: 0)
+
                 if let batch {
+                    let added = currentStep.map { step in batch.steps.contains { $0.sameAs(step) } } ?? false
                     Button {
-                        if let step = model.captureStep() { flash(batch.add(step)) }
+                        addToBatch(added: added)
                     } label: {
                         Image(systemName: "plus.circle")
                     }
                     .buttonStyle(QuietBarButton())
                     .accessibilityLabel("Add to batch")
-                    .disabled(model.busy || batch.steps.count >= maxSteps)
+                    .opacity(added || model.busy || batch.steps.count >= maxSteps ? 0.35 : 1)
+                    .disabled(added || model.busy || batch.steps.count >= maxSteps)
 
                     Button { showBatch = true } label: {
                         Image(systemName: "rectangle.stack")
@@ -462,6 +490,8 @@ private struct ExportActions: View {
                                         .frame(minWidth: 15, minHeight: 15)
                                         .background(DS.ink, in: Circle())
                                         .offset(x: 4, y: -2)
+                                        .scaleEffect(badgeBump ? 1.35 : 1)
+                                        .animation(.spring(response: 0.25, dampingFraction: 0.5), value: badgeBump)
                                 }
                             }
                     }
@@ -482,8 +512,6 @@ private struct ExportActions: View {
                 .buttonStyle(QuietBarButton())
                 .accessibilityLabel("Share")
 
-                Spacer(minLength: 8)
-
                 Button { Task {
                     let urls = await model.exportFiles()
                     if !urls.isEmpty { await model.saveToPhotos(urls) }
@@ -493,6 +521,17 @@ private struct ExportActions: View {
                 }
                 .buttonStyle(QuietBarButton())
                 .accessibilityLabel("Save")
+            }
+            .overlay(alignment: .trailing) {
+                if let flying {
+                    Text("\(flying)")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(DS.onInk)
+                        .frame(width: 17, height: 17)
+                        .background(DS.ink, in: Circle())
+                        .offset(x: flyX, y: -14)
+                        .allowsHitTesting(false)
+                }
             }
 
         }
