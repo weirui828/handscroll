@@ -454,6 +454,34 @@ private struct ExportActions: View {
 
                 Spacer(minLength: 8)
 
+                if let batch {
+                    Button {
+                        if let step = model.captureStep() { flash(batch.add(step)) }
+                    } label: {
+                        Image(systemName: "plus.circle")
+                    }
+                    .buttonStyle(QuietBarButton())
+                    .accessibilityLabel("Add to batch")
+                    .disabled(model.busy || batch.steps.count >= maxSteps)
+
+                    Button { showBatch = true } label: {
+                        Image(systemName: "rectangle.stack")
+                            .overlay(alignment: .topTrailing) {
+                                if !batch.steps.isEmpty {
+                                    Text("\(batch.steps.count)")
+                                        .font(.system(size: 9, weight: .bold))
+                                        .foregroundStyle(DS.onInk)
+                                        .frame(minWidth: 15, minHeight: 15)
+                                        .background(DS.ink, in: Circle())
+                                        .offset(x: 4, y: -2)
+                                }
+                            }
+                    }
+                    .buttonStyle(QuietBarButton())
+                    .accessibilityLabel("Batch")
+                    .accessibilityValue("\(batch.steps.count) steps")
+                }
+
                 Button {
                     Task {
                         let urls = await model.exportFiles()
@@ -476,37 +504,6 @@ private struct ExportActions: View {
                 .buttonStyle(PrimaryButton())
             }
 
-            if let batch {
-                HStack(spacing: 10) {
-                    Button {
-                        if let step = model.captureStep() { flash(batch.add(step)) }
-                    } label: {
-                        Text("Add to batch")
-                            .font(.footnote.weight(.medium))
-                            .foregroundStyle(DS.secondary)
-                            .frame(height: 30)
-                            .padding(.horizontal, 8)
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(model.busy || batch.steps.count >= maxSteps)
-
-                    Button { showBatch = true } label: {
-                        HStack(spacing: 3) {
-                            Text(batch.steps.isEmpty ? "Batch" : "Batch · \(batch.steps.count)")
-                            Image(systemName: "chevron.right").font(.system(size: 9, weight: .semibold))
-                        }
-                        .font(.footnote.weight(.medium))
-                        .foregroundStyle(DS.secondary)
-                        .frame(height: 30)
-                        .padding(.horizontal, 8)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Batch")
-                    .accessibilityValue("\(batch.steps.count) steps")
-
-                    Spacer()
-                }
-            }
         }
         .padding(.horizontal, 14).padding(.vertical, 8)
         .background(DS.bar)
