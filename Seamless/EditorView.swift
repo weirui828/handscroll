@@ -71,19 +71,16 @@ struct EditorView: View {
 
     var body: some View {
         GeometryReader { geo in
-            #if DEBUG
-            let forcePanes = ProcessInfo.processInfo.arguments.contains("-demoPanes")
-            #else
-            let forcePanes = false
-            #endif
-            let sideBySide = !onOuterDisplay && (geo.size.width >= 520 && geo.size.width > geo.size.height * 1.05) || forcePanes
+            let sideBySide = !onOuterDisplay
+                && geo.size.width >= 520
+                && geo.size.width > geo.size.height * 1.05
             let compact = !sideBySide && geo.size.height < 620
             let controlsWidth = min(400, geo.size.width * 0.42)
 
             let header = VStack(spacing: 0) {
                 modePicker
                     .padding(.horizontal, 12)
-                    .padding(.top, sideBySide ? 20 : 10)
+                    .padding(.top, sideBySide ? 44 : 10)
                     .padding(.bottom, 6)
                 Divider().overlay(DS.stroke)
             }
