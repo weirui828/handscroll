@@ -138,6 +138,8 @@ struct EditorView: View {
             }
         }
         .background(DS.bg)
+        // The actions live in the bottom bar, so the top bar has nothing to say.
+        .toolbar(showsExportActions ? .hidden : .visible, for: .navigationBar)
         .overlay(alignment: .bottom) {
             if let message = model.progress ?? (model.busy ? "Working…" : note) {
                 Text(message)
@@ -152,7 +154,7 @@ struct EditorView: View {
             }
         }
         .toolbar {
-            ToolbarItemGroup(placement: .topBarTrailing) {
+            ToolbarItemGroup(placement: .bottomBar) {
                 if let pick {
                     PhotosPicker(selection: pick, matching: .images, photoLibrary: .shared()) {
                         Label("New photo", systemImage: "photo.badge.plus")
