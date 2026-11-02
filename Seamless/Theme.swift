@@ -53,6 +53,19 @@ struct QuietBarButton: ButtonStyle {
     }
 }
 
+/// The one filled control in a bar: an ink square with a slightly larger glyph.
+struct InkIconButton: ButtonStyle {
+    @Environment(\.isEnabled) private var enabled
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 20, weight: .semibold))
+            .foregroundStyle(DS.onInk)
+            .frame(width: 50, height: 50)
+            .background(DS.ink.opacity(configuration.isPressed || !enabled ? 0.6 : 1),
+                        in: RoundedRectangle(cornerRadius: 14))
+    }
+}
+
 struct PrimaryButton: ButtonStyle {
     @Environment(\.isEnabled) private var enabled
     func makeBody(configuration: Configuration) -> some View {

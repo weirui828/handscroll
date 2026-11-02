@@ -489,9 +489,10 @@ private struct ExportActions: View {
                     if !urls.isEmpty { await model.saveToPhotos(urls) }
                     showResult = true
                 } } label: {
-                    Label("Save", systemImage: "square.and.arrow.down")
+                    Label("Save", systemImage: "square.and.arrow.down").labelStyle(.iconOnly)
                 }
-                .buttonStyle(PrimaryButton())
+                .buttonStyle(InkIconButton())
+                .accessibilityLabel("Save")
             }
 
         }
