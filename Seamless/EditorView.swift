@@ -419,7 +419,7 @@ private struct ExportActions: View {
     }
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 4) {
             if model.busy {
                 HStack(spacing: 8) {
                     ProgressView()
@@ -431,6 +431,7 @@ private struct ExportActions: View {
                     .font(.footnote).foregroundStyle(DS.secondary)
                     .transition(.opacity)
             }
+
             HStack(spacing: 2) {
                 Menu {
                     Section("Image quality") {
@@ -442,8 +443,7 @@ private struct ExportActions: View {
                     }
                 } label: {
                     HStack(spacing: 4) {
-                        Text(qualityName)
-                            .font(.footnote.weight(.medium))
+                        Text(qualityName).font(.footnote.weight(.medium))
                         Image(systemName: "chevron.up.chevron.down").font(.system(size: 9, weight: .semibold))
                     }
                     .foregroundStyle(DS.secondary)
@@ -454,33 +454,6 @@ private struct ExportActions: View {
 
                 Spacer(minLength: 8)
 
-                if let batch {
-                    Menu {
-                        Button {
-                            if let step = model.captureStep() { flash(batch.add(step)) }
-                        } label: {
-                            Label("Add to batch", systemImage: "plus.circle")
-                        }
-                        .disabled(model.busy || batch.steps.count >= maxSteps)
-
-                        Button { showBatch = true } label: {
-                            Label("Open Batch", systemImage: "square.stack.3d.up")
-                        }
-                    } label: {
-                        HStack(spacing: 4) {
-                            Text(batch.steps.isEmpty ? "Batch" : "Batch · \(batch.steps.count)")
-                                .font(.footnote.weight(.medium))
-                            Image(systemName: "chevron.up.chevron.down")
-                                .font(.system(size: 9, weight: .semibold))
-                        }
-                        .foregroundStyle(DS.secondary)
-                        .frame(height: 44)
-                        .padding(.horizontal, 4)
-                    }
-                    .accessibilityLabel("Batch")
-                    .accessibilityValue("\(batch.steps.count) steps")
-                }
-
                 Button {
                     Task {
                         let urls = await model.exportFiles()
@@ -488,8 +461,7 @@ private struct ExportActions: View {
                         else { shareRequest = ShareRequest(items: urls) }
                     }
                 } label: {
-                    Label("Share", systemImage: "square.and.arrow.up")
-                        .labelStyle(.iconOnly)
+                    Label("Share", systemImage: "square.and.arrow.up").labelStyle(.iconOnly)
                 }
                 .buttonStyle(QuietBarButton())
                 .accessibilityLabel("Share")
@@ -502,9 +474,39 @@ private struct ExportActions: View {
                     Label("Save", systemImage: "square.and.arrow.down")
                 }
                 .buttonStyle(PrimaryButton())
-
             }
-            .disabled(model.busy)
+
+            if let batch {
+                HStack(spacing: 10) {
+                    Button {
+                        if let step = model.captureStep() { flash(batch.add(step)) }
+                    } label: {
+                        Text("Add to batch")
+                            .font(.footnote.weight(.medium))
+                            .foregroundStyle(DS.secondary)
+                            .frame(height: 30)
+                            .padding(.horizontal, 8)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(model.busy || batch.steps.count >= maxSteps)
+
+                    Button { showBatch = true } label: {
+                        HStack(spacing: 3) {
+                            Text(batch.steps.isEmpty ? "Batch" : "Batch · \(batch.steps.count)")
+                            Image(systemName: "chevron.right").font(.system(size: 9, weight: .semibold))
+                        }
+                        .font(.footnote.weight(.medium))
+                        .foregroundStyle(DS.secondary)
+                        .frame(height: 30)
+                        .padding(.horizontal, 8)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Batch")
+                    .accessibilityValue("\(batch.steps.count) steps")
+
+                    Spacer()
+                }
+            }
         }
         .padding(.horizontal, 14).padding(.vertical, 8)
         .background(DS.bar)
