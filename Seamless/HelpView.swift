@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum HelpTab: String, CaseIterable, Identifiable {
-    case carousel = "Carousel", fit = "Fit", crop = "Crop", reel = "Reel", batch = "Batch", settings = "Accent"
+    case carousel = "Carousel", fit = "Fit", crop = "Crop", reel = "Reel", batch = "Batch", settings = "Settings"
     var id: String { rawValue }
     init(_ m: Mode) { self = HelpTab(rawValue: m.rawValue) ?? .carousel }
 }
