@@ -16,6 +16,8 @@ struct FixContext: Identifiable {
 final class EditorModel {
     var photo: UIImage?
     var baseName = "photo"
+    /// The picker item the photo came from, so Batch can include it.
+    private(set) var sourceItem: PhotosPickerItem?
     var mode = Mode.carousel { didSet { stopReel(); rebuildPreview() } }
     var layouts: [Mode: Layout] = [:]
     var look = Look() { didSet { rebuildPreview() } }
@@ -67,6 +69,7 @@ final class EditorModel {
             status = "This photo could not be opened. Try a JPEG or PNG."
             return
         }
+        sourceItem = item
         setPhoto(img, base: await PhotoNames.originalName(item) ?? "photo")
         reset()
     }

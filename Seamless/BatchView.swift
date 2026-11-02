@@ -60,11 +60,21 @@ struct BatchView: View {
         }
     }
 
+    private func card<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(DS.secondary)
+            content()
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(DS.card, in: RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(DS.stroke, lineWidth: 1))
+    }
+
     private var stepsSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Steps").font(.headline)
+        card("Steps") {
             if batch.steps.isEmpty {
-                Text("No steps yet. Add some from the editor.").foregroundStyle(.secondary)
+                Text("No steps yet. Add some from the editor.").foregroundStyle(DS.secondary)
             }
             ForEach(Array(batch.steps.enumerated()), id: \.element.id) { i, step in
                 HStack {
@@ -82,12 +92,8 @@ struct BatchView: View {
     }
 
     private var photosSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        card("Photos · \(batch.photos.count) of \(maxPhotos)") {
             HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Photos").font(.headline)
-                    Text("\(batch.photos.count) of \(maxPhotos) photos").foregroundStyle(.secondary).font(.subheadline)
-                }
                 Spacer()
                 PhotosPicker(selection: $picks, maxSelectionCount: max(1, maxPhotos - batch.photos.count),
                              matching: .images, photoLibrary: .shared()) {
@@ -122,7 +128,7 @@ struct BatchView: View {
                     }
                 }
                 .padding(10)
-                .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
+                .background(DS.bg, in: RoundedRectangle(cornerRadius: 12))
             }
             if batch.photos.isEmpty { Text("Add up to \(maxPhotos) photos to apply the steps to them.").foregroundStyle(.secondary) }
         }
@@ -145,8 +151,8 @@ struct BatchView: View {
     }
 
     private var runSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(batch.estimateText).font(.footnote).foregroundStyle(.secondary)
+        card("Export") {
+            Text(batch.estimateText).font(.footnote).foregroundStyle(DS.secondary)
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 10)], spacing: 10) {
                 Button { Task { await batch.run() } } label: {
                     Text(batch.progress ?? "Make files").frame(maxWidth: .infinity, minHeight: 24)
@@ -165,7 +171,7 @@ struct BatchView: View {
             }
             if let s = batch.status { Text(s).font(.footnote).foregroundStyle(.secondary) }
             Text("Each file name shows the photo, the step and the slide, for example DSC_0420_2-carousel_01.jpg.")
-                .font(.caption).foregroundStyle(.secondary)
+                .font(.caption).foregroundStyle(DS.secondary)
         }
     }
 }

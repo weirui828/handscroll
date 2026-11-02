@@ -44,6 +44,11 @@ struct ContentView: View {
         .background(DS.bg)
         .environment(hinge)
         .background(HingeReader(state: hinge))
+        .onChange(of: showBatch) { _, showing in
+            // the photo open in the editor belongs in the batch, so take it along
+            guard showing, let item = editor.sourceItem, !batch.contains(item) else { return }
+            Task { await batch.add([item]) }
+        }
         .onChange(of: pick) { _, item in
             guard let item else { return }
             Task { await editor.load(item); pick = nil }

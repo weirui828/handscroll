@@ -81,6 +81,11 @@ final class BatchModel {
         }
     }
 
+    /// True when this picker item is already in the batch.
+    func contains(_ item: PhotosPickerItem) -> Bool {
+        photos.contains { $0.item.itemIdentifier == item.itemIdentifier }
+    }
+
     func removePhoto(_ id: Int) {
         photos.removeAll { $0.id == id }
         results = []
