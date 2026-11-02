@@ -100,6 +100,23 @@ struct CanvasView: View {
                     let w = aw * fit, h = ah * fit
                     ZStack {
                         Image(uiImage: img).resizable().frame(width: w, height: h)
+                            .overlay(alignment: .bottom) {
+                                if isReel {
+                                    let progress = model.reel.dur > 0 ? min(1, max(0, model.reelT / model.reel.dur)) : 0
+                                    ZStack(alignment: .leading) {
+                                        Capsule()
+                                            .fill(.white.opacity(0.22))
+                                            .background(.ultraThinMaterial, in: Capsule())
+                                        Capsule()
+                                            .fill(.white.opacity(0.92))
+                                            .frame(width: max(0, (w - 24) * progress))
+                                    }
+                                    .frame(width: max(0, w - 24), height: 4)
+                                    .padding(.bottom, 10)
+                                    .animation(.linear(duration: 0.08), value: progress)
+                                    .allowsHitTesting(false)
+                                }
+                            }
                         if isReel {
                             Button { model.togglePlay() } label: {
                                 Image(systemName: model.playing ? "pause.fill" : "play.fill")
@@ -137,19 +154,6 @@ struct CanvasView: View {
                 }
             }
             .clipped()
-            if model.mode == .reel {
-                GeometryReader { bar in
-                    ZStack(alignment: .leading) {
-                        Capsule().fill(DS.stroke)
-                        Capsule().fill(DS.secondary)
-                            .frame(width: bar.size.width * (model.reel.dur > 0 ? min(1, model.reelT / model.reel.dur) : 0))
-                    }
-                }
-                .frame(height: 2)
-                .padding(.horizontal, 24)
-                .padding(.top, 6)
-                .allowsHitTesting(false)
-            }
             VStack(spacing: 2) {
                 if model.mode == .reel {
                     Text(model.sizeText).font(.footnote).foregroundStyle(DS.secondary)
