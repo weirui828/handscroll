@@ -390,14 +390,14 @@ struct Controls: View {
 
     @ViewBuilder
     private var reelControls: some View {
-        group("Pan") {
-            HStack {
-                Text("Start → End").font(.footnote).foregroundStyle(DS.secondary)
-                Spacer()
-                Text("\(Int(model.reel.p0 * 100))% → \(Int(model.reel.p1 * 100))%")
-                    .font(.footnote).foregroundStyle(DS.secondary)
-                    .monospacedDigit()
-            }
+        group("Pan", trailing: AnyView(
+            Toggle("Reverse", isOn: Binding(get: { model.reel.p1 < model.reel.p0 },
+                                           set: { reversePan(model, $0) }))
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .controlSize(.mini)
+                .accessibilityLabel("Reverse")
+        )) {
             RangeSlider(lower: $model.reel.p0, upper: $model.reel.p1)
                 .frame(height: 36)
         }
@@ -419,9 +419,14 @@ struct Controls: View {
 
     // MARK: Export and batch
 
-    private func group<Content: View>(_ title: String, @ViewBuilder _ content: () -> Content) -> some View {
+    private func group<Content: View>(_ title: String, trailing: AnyView? = nil,
+                                     @ViewBuilder _ content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(DS.secondary)
+            HStack {
+                Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(DS.secondary)
+                Spacer()
+                trailing
+            }
             content()
         }
         .padding(14)
@@ -457,6 +462,15 @@ struct AdaptivePicker<Selection: Hashable, Choices: View>: View {
         }
         .frame(maxWidth: .infinity)
     }
+}
+
+/// The switch decides which end the pan starts from; the range itself stays.
+@MainActor
+private func reversePan(_ model: EditorModel, _ reverse: Bool) {
+    let a = model.reel.p0, b = model.reel.p1
+    guard a != b else { return }
+    if reverse, a < b { model.reel.p0 = b; model.reel.p1 = a }
+    if !reverse, a > b { model.reel.p0 = b; model.reel.p1 = a }
 }
 
 /// Two knobs on one track: the start and the end of the reel pan.
