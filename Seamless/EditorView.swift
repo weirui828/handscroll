@@ -163,14 +163,29 @@ struct CanvasView: View {
                             // the dashed cuts run a little past the photo and end in a grip
                             Canvas { ctx, size in
                                 let n = max(frame.n, 1)
+                                let top = (size.height - h) / 2       // where the photo starts
+                                let bottom = top + h
                                 for i in 1..<n {
                                     let x = size.width * CGFloat(i) / CGFloat(n)
-                                    var p = Path()
-                                    p.move(to: CGPoint(x: x, y: 4)); p.addLine(to: CGPoint(x: x, y: size.height - 4))
-                                    ctx.stroke(p, with: .color(.white.opacity(0.9)), style: StrokeStyle(lineWidth: 1, dash: [6, 4]))
-                                    for y in [CGFloat(6), size.height - 6] {
-                                        let grip = CGRect(x: x - 8, y: y - 1.5, width: 16, height: 3)
-                                        ctx.fill(Path(roundedRect: grip, cornerRadius: 1.5), with: .color(.white.opacity(0.9)))
+                                    // inside the photo the cut is white
+                                    var inside = Path()
+                                    inside.move(to: CGPoint(x: x, y: top + 4))
+                                    inside.addLine(to: CGPoint(x: x, y: bottom - 4))
+                                    ctx.stroke(inside, with: .color(.white.opacity(0.9)),
+                                               style: StrokeStyle(lineWidth: 1, dash: [6, 4]))
+
+                                    // outside it sits on paper, so it turns ink
+                                    for range in [(CGFloat(8), top - 2), (bottom + 2, size.height - 8)] {
+                                        var outside = Path()
+                                        outside.move(to: CGPoint(x: x, y: range.0))
+                                        outside.addLine(to: CGPoint(x: x, y: range.1))
+                                        ctx.stroke(outside, with: .color(DS.secondary.opacity(0.6)),
+                                                   style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
+
+                                        let y = range.0 < top ? range.0 : range.1
+                                        let grip = CGRect(x: x - 9, y: y - 2, width: 18, height: 4)
+                                        ctx.fill(Path(roundedRect: grip, cornerRadius: 2),
+                                                 with: .color(DS.secondary))
                                     }
                                 }
                             }
@@ -408,8 +423,6 @@ struct Controls: View {
                     .frame(height: 34)
             }
 
-            inlineSlider("Vertical", value: $model.reel.v, range: 0...1, text: verticalLabel)
-
             inlineSlider("Zoom to", value: Binding(get: { model.reel.z1 },
                                                   set: { model.reel.z1 = $0; model.reel.z0 = 1 }),
                          range: 1...1.6,
@@ -433,11 +446,6 @@ struct Controls: View {
             Slider(value: value, in: range)
             rowValue(text).frame(width: 42, alignment: .trailing)
         }
-    }
-
-    private var verticalLabel: String {
-        let v = model.reel.v
-        return v < 0.34 ? "top" : v > 0.66 ? "bottom" : "middle"
     }
 
     private func rowLabel(_ text: String) -> some View {
