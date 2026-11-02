@@ -71,10 +71,6 @@ struct StartView: View {
                 .font(.system(size: 30, weight: .semibold))
                 .tracking(0.6)
                 .foregroundStyle(DS.text)
-            Text("Cut one photo into slides that join up on Instagram.")
-                .multilineTextAlignment(.center)
-                .foregroundStyle(DS.secondary)
-                .frame(maxWidth: 340)
             PhotosPicker(selection: $pick, matching: .images, photoLibrary: .shared()) {
                 Text("Select a photo").frame(minWidth: 180)
             }

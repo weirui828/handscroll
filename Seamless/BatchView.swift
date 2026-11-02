@@ -130,7 +130,6 @@ struct BatchView: View {
                 .padding(10)
                 .background(DS.bg, in: RoundedRectangle(cornerRadius: 12))
             }
-            if batch.photos.isEmpty { Text("Add up to \(maxPhotos) photos to apply the steps to them.").foregroundStyle(.secondary) }
         }
     }
 
@@ -177,8 +176,6 @@ struct BatchView: View {
                 .disabled(!batch.canRun)
             }
             if let s = batch.status { Text(s).font(.footnote).foregroundStyle(DS.secondary) }
-            Text("Each file name shows the photo, the step and the slide, for example DSC_0420_2-carousel_01.jpg.")
-                .font(.caption).foregroundStyle(DS.secondary)
         }
     }
 }
