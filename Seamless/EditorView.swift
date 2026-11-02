@@ -16,6 +16,7 @@ struct EditorView: View {
     @State private var controlsHeight: CGFloat = 0
 
     var onHelp: (() -> Void)?
+    var onExplain: (() -> Void)?
     var showsExportBar = true
     var hidesNavigationBar = true
 
@@ -75,7 +76,7 @@ struct EditorView: View {
 
             if sideBySide {
                 HStack(spacing: 0) {
-                    CanvasView(model: model, inset: 20, onExplain: onHelp)
+                    CanvasView(model: model, inset: 20, onExplain: onExplain)
                     Divider().overlay(DS.stroke)
                     VStack(spacing: 0) { header; controls }
                         .frame(width: controlsWidth)
@@ -85,7 +86,7 @@ struct EditorView: View {
                 VStack(spacing: 0) {
                     header
                     // the photo sits in the middle of whatever is left above the controls
-                    CanvasView(model: model, onExplain: onHelp)
+                    CanvasView(model: model, onExplain: onExplain)
                         .frame(maxHeight: .infinity)
                     Divider().overlay(DS.stroke)
                     ScrollView {

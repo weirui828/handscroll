@@ -9,6 +9,7 @@ struct ContentView: View {
     @State private var pick: PhotosPickerItem?
     @State private var showBatch = false
     @State private var showHelp = false
+    @State private var helpTab: HelpTab?
     #if DEBUG
     private var debugSettings: Bool { ProcessInfo.processInfo.arguments.contains("-demoSettings") }
     #else
@@ -26,7 +27,8 @@ struct ContentView: View {
                                showsWordmark: true,
                                pick: $pick,
                                accent: Color(UIColor(hex: accentHex)),
-                               onHelp: { showHelp = true })
+                               onHelp: { helpTab = nil; showHelp = true },
+                               onExplain: { helpTab = .basics; showHelp = true })
                 }
             }
             .navigationTitle("")
@@ -51,6 +53,7 @@ struct ContentView: View {
             if args.contains("-demoPlay") { editor.togglePlay() }
             if args.contains("-demoSettings") { showHelp = true }
             if args.contains("-demoHelp") { showHelp = true }
+            if args.contains("-demoBasics") { helpTab = .basics; showHelp = true }
             if args.contains("-demoColor") {
                 editor.look.fill = .color
                 editor.look.colorHex = "#A78BFA"
@@ -67,9 +70,9 @@ struct ContentView: View {
             Task { await editor.load(item); pick = nil }
         }
         .sheet(item: $shareRequest) { request in ShareSheet(items: request.items) }
-        .sheet(isPresented: $showHelp) {
-            HelpView(startTab: debugSettings ? .settings
-                        : showBatch ? .batch : editor.photo == nil ? .carousel : HelpTab(editor.mode),
+        .sheet(isPresented: $showHelp, onDismiss: { helpTab = nil }) {
+            HelpView(startTab: helpTab ?? (debugSettings ? .settings
+                        : showBatch ? .batch : editor.photo == nil ? .basics : HelpTab(editor.mode)),
                      accentHex: $accentHex)
         }
     }
