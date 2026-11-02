@@ -273,6 +273,18 @@ struct CanvasView: View {
             }
             .clipped()
             VStack(spacing: 2) {
+                        if model.tallWarning {
+                            Button { onExplain?() } label: {
+                                Image(systemName: "exclamationmark.circle")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(.orange)
+                                    .frame(width: 24, height: 44)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("3:4 warning")
+                            .accessibilityHint("Opens Help")
+                        }
+
                 HStack(spacing: 20) {
                     if model.mode == .reel {
                         Text(model.sizeText).font(.footnote).foregroundStyle(DS.secondary)
@@ -292,18 +304,6 @@ struct CanvasView: View {
                             .foregroundStyle(DS.secondary)
                         }
                         .accessibilityLabel("Output size")
-
-                        if model.tallWarning {
-                            Button { onExplain?() } label: {
-                                Image(systemName: "exclamationmark.circle")
-                                    .font(.system(size: 13, weight: .semibold))
-                                    .foregroundStyle(.orange)
-                                    .frame(width: 24, height: 44)
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel("3:4 warning")
-                            .accessibilityHint("Opens Help")
-                        }
 
                         Menu {
                             Button("Fit") { model.wholePhoto() }
