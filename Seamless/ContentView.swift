@@ -1,0 +1,106 @@
+import SwiftUI
+import PhotosUI
+
+struct ContentView: View {
+    @State private var editor = EditorModel()
+    @State private var batch = BatchModel()
+    @State private var hinge = HingeState()
+    @State private var pick: PhotosPickerItem?
+    @State private var showBatch = false
+    @State private var showHelp = false
+    @State private var shareRequest: ShareRequest?
+    @AppStorage("seamless.theme") private var themeRaw = Theme.violet.rawValue
+    @AppStorage("seamless.accent") private var customHex = "#A78BFA"
+
+    private var accent: Accent { Accent(themeRaw: themeRaw, customHex: customHex) }
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if editor.photo == nil {
+                    StartView(pick: $pick, status: editor.status, accent: accent)
+                } else {
+                    EditorView(model: editor, batch: batch, accent: accent, showBatch: $showBatch,
+                               shareRequest: $shareRequest)
+                }
+            }
+            .navigationTitle("")
+        .toolbarBackground(DS.bar, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                if editor.photo != nil {
+                    ToolbarItem(placement: .topBarLeading) {
+                        PhotosPicker(selection: $pick, matching: .images, photoLibrary: .shared()) {
+                            Label("New photo", systemImage: "photo.badge.plus")
+                        }
+                    }
+                }
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Button { showBatch = true } label: { Label("Batch", systemImage: "square.stack.3d.up") }
+                    Button { showHelp = true } label: { Label("Help", systemImage: "questionmark.circle") }
+                }
+            }
+            .navigationDestination(isPresented: $showBatch) {
+                BatchView(batch: batch, accent: accent, shareRequest: $shareRequest)
+            }
+        }
+        .tint(DS.ink)
+        .background(DS.bg)
+        .environment(hinge)
+        .background(HingeReader(state: hinge))
+        .onChange(of: pick) { _, item in
+            guard let item else { return }
+            Task { await editor.load(item); pick = nil }
+        }
+        .sheet(item: $shareRequest) { request in ShareSheet(items: request.items) }
+        .sheet(isPresented: $showHelp) {
+            HelpView(startTab: showBatch ? .batch : editor.photo == nil ? .carousel : HelpTab(editor.mode),
+                     themeRaw: $themeRaw, customHex: $customHex, accent: accent)
+        }
+    }
+}
+
+struct StartView: View {
+    @Binding var pick: PhotosPickerItem?
+    var status: String?
+    var accent: Accent
+
+    var body: some View {
+        ScrollView {
+        VStack(spacing: 20) {
+            Text("Seamless")
+                .font(.system(size: 30, weight: .semibold))
+                .tracking(0.6)
+                .foregroundStyle(DS.text)
+            Text("Cut one photo into slides that join up on Instagram.")
+                .multilineTextAlignment(.center)
+                .foregroundStyle(DS.secondary)
+                .frame(maxWidth: 340)
+            PhotosPicker(selection: $pick, matching: .images, photoLibrary: .shared()) {
+                Text("Select a photo").frame(minWidth: 180)
+            }
+            .buttonStyle(PrimaryButton(accent: accent))
+            if let status { Text(status).foregroundStyle(.red).font(.footnote) }
+        }
+        .padding()
+        .frame(maxWidth: .infinity)
+        }
+        .scrollBounceBehavior(.basedOnSize)
+        .defaultScrollAnchor(.center)
+        .background(DS.bg)
+    }
+}
+
+struct ShareRequest: Identifiable {
+    let id = UUID()
+    let items: [URL]
+}
+
+struct ShareSheet: UIViewControllerRepresentable {
+    let items: [URL]
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    }
+    func updateUIViewController(_ vc: UIActivityViewController, context: Context) {}
+}
