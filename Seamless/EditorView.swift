@@ -20,11 +20,12 @@ struct EditorView: View {
         GeometryReader { geo in
             // a wide, on-purpose window gets two panes; everything else stacks with the
             // header at the top, so the wordmark never floats in the middle of the screen
-            let sideBySide = geo.size.width >= 640 && geo.size.width > geo.size.height * 0.9
+            let sideBySide = geo.size.width >= 520 && geo.size.width > geo.size.height * 1.05
+            let compact = !sideBySide && geo.size.height < 620
             let controlsWidth = min(400, geo.size.width * 0.42)
 
             let header = VStack(spacing: 0) {
-                if showsWordmark {
+                if showsWordmark && !compact {
                     HStack(spacing: 0) {
                         Text("Seamless")
                             .font(.system(size: 17, weight: .semibold))
@@ -52,7 +53,7 @@ struct EditorView: View {
 
             let controls = VStack(spacing: 0) {
                 ScrollView {
-                    Controls(model: model).padding(12)
+                    Controls(model: model, compact: compact).padding(12)
                 }
                 .scrollBounceBehavior(.basedOnSize)
                 if showsExportBar {
@@ -78,14 +79,14 @@ struct EditorView: View {
                         .frame(maxHeight: .infinity)
                     Divider().overlay(DS.stroke)
                     ScrollView {
-                        Controls(model: model)
+                        Controls(model: model, compact: compact)
                             .padding(12)
                             .background(GeometryReader { proxy in
                                 Color.clear.preference(key: ControlsHeightKey.self, value: proxy.size.height)
                             })
                     }
                     .scrollBounceBehavior(.basedOnSize)
-                    .frame(height: min(max(controlsHeight, 140), geo.size.height * 0.55))
+                    .frame(height: min(max(controlsHeight, 120), geo.size.height * (compact ? 0.45 : 0.55)))
                     .onPreferenceChange(ControlsHeightKey.self) { controlsHeight = $0 }
                     if showsExportBar {
                         Divider().overlay(DS.stroke)
@@ -367,6 +368,7 @@ struct LabeledSlider: View {
 
 struct Controls: View {
     @Bindable var model: EditorModel
+    var compact = false
     @ScaledMetric(relativeTo: .body) private var slideWidth = 72.0
 
     var body: some View {
@@ -467,15 +469,19 @@ struct Controls: View {
 
     private func group<Content: View>(_ title: String, trailing: AnyView? = nil,
                                      @ViewBuilder _ content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(DS.secondary)
-                Spacer()
-                trailing
+        VStack(alignment: .leading, spacing: compact ? 6 : 8) {
+            if !compact {
+                HStack {
+                    Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(DS.secondary)
+                    Spacer()
+                    trailing
+                }
+            } else if trailing != nil {
+                HStack { Spacer(); trailing }
             }
             content()
         }
-        .padding(14)
+        .padding(compact ? 10 : 14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(DS.card, in: RoundedRectangle(cornerRadius: 14))
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(DS.stroke, lineWidth: 1))
