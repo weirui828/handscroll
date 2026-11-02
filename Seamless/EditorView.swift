@@ -72,8 +72,11 @@ struct EditorView: View {
             } else {
                 VStack(spacing: 0) {
                     header
+                    let aspect = model.mode == .reel ? reelSize.height / reelSize.width
+                        : max(0.25, (model.currentFrame?.a ?? 1.5))
+                    let ideal = geo.size.width / aspect + 54
                     CanvasView(model: model)
-                        .frame(height: max(180, min(340, geo.size.height * 0.38)))
+                        .frame(height: max(180, min(ideal, geo.size.height - 320)))
                     Divider().overlay(DS.stroke)
                     controls
                 }
@@ -354,7 +357,7 @@ struct Controls: View {
     @ScaledMetric(relativeTo: .body) private var slideWidth = 72.0
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 12) {
             if let geo = model.geo {
                 if model.mode == .reel { reelControls } else { imageControls(geo) }
             }
@@ -395,13 +398,12 @@ struct Controls: View {
                 rowLabel("Pan").frame(width: 58, alignment: .leading)
                 RangeSlider(lower: $model.reel.p0, upper: $model.reel.p1)
                     .frame(height: 34)
-                Toggle("Reverse", isOn: Binding(get: { model.reel.p1 < model.reel.p0 },
-                                               set: { reversePan(model, $0) }))
-                    .labelsHidden()
-                    .toggleStyle(.switch)
-                    .controlSize(.mini)
-                    .accessibilityLabel("Reverse")
             }
+
+            Toggle("Reverse", isOn: Binding(get: { model.reel.p1 < model.reel.p0 },
+                                           set: { reversePan(model, $0) }))
+                .font(.footnote)
+                .tint(DS.ink)
 
             inlineSlider("Vertical", value: $model.reel.v, range: 0...1, text: verticalLabel)
 
