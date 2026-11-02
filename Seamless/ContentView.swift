@@ -5,9 +5,15 @@ struct ContentView: View {
     @State private var editor = EditorModel()
     @State private var batch = BatchModel()
     @State private var hinge = HingeState()
+    @AppStorage("seamless.accent") private var accentHex = "#111317"
     @State private var pick: PhotosPickerItem?
     @State private var showBatch = false
     @State private var showHelp = false
+    #if DEBUG
+    private var debugSettings: Bool { ProcessInfo.processInfo.arguments.contains("-demoSettings") }
+    #else
+    private var debugSettings: Bool { false }
+    #endif
     @State private var shareRequest: ShareRequest?
     var body: some View {
         NavigationStack {
@@ -40,7 +46,7 @@ struct ContentView: View {
                 BatchView(batch: batch, shareRequest: $shareRequest)
             }
         }
-        .tint(DS.ink)
+        .tint(Color(UIColor(hex: accentHex)))
         .background(DS.bg)
         .environment(hinge)
         .background(HingeReader(state: hinge))
@@ -52,6 +58,8 @@ struct ContentView: View {
                let mode = Mode(rawValue: args[i + 1]) { editor.mode = mode }
             if args.contains("-demoBatch") { showBatch = true }
             if args.contains("-demoPlay") { editor.togglePlay() }
+            if args.contains("-demoSettings") { showHelp = true }
+            if args.contains("-demoAccent") { accentHex = "#A78BFA" }
             if args.contains("-demoColor") {
                 editor.look.fill = .color
                 editor.look.colorHex = "#A78BFA"
@@ -69,7 +77,9 @@ struct ContentView: View {
         }
         .sheet(item: $shareRequest) { request in ShareSheet(items: request.items) }
         .sheet(isPresented: $showHelp) {
-            HelpView(startTab: showBatch ? .batch : editor.photo == nil ? .carousel : HelpTab(editor.mode))
+            HelpView(startTab: debugSettings ? .settings
+                        : showBatch ? .batch : editor.photo == nil ? .carousel : HelpTab(editor.mode),
+                     accentHex: $accentHex)
         }
     }
 }

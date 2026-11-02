@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum HelpTab: String, CaseIterable, Identifiable {
-    case carousel = "Carousel", fit = "Fit", crop = "Crop", reel = "Reel", batch = "Batch"
+    case carousel = "Carousel", fit = "Fit", crop = "Crop", reel = "Reel", batch = "Batch", settings = "Accent"
     var id: String { rawValue }
     init(_ m: Mode) { self = HelpTab(rawValue: m.rawValue) ?? .carousel }
 }
@@ -12,10 +12,12 @@ private enum Block {
 
 struct HelpView: View {
     @State var tab: HelpTab
+    @Binding var accentHex: String
     @Environment(\.dismiss) private var dismiss
 
-    init(startTab: HelpTab) {
+    init(startTab: HelpTab, accentHex: Binding<String>) {
         _tab = State(initialValue: startTab)
+        _accentHex = accentHex
     }
 
     var body: some View {
@@ -36,7 +38,11 @@ struct HelpView: View {
                 Divider()
                 ScrollView {
                     VStack(alignment: .leading, spacing: 12) {
-                        ForEach(Array(blocks(tab).enumerated()), id: \.offset) { _, b in view(b) }
+                        if tab == .settings {
+                            accentSettings
+                        } else {
+                            ForEach(Array(blocks(tab).enumerated()), id: \.offset) { _, b in view(b) }
+                        }
                         Text("Seamless works only on your device. It does not send your photos to a server.")
                             .font(.footnote).foregroundStyle(.secondary).padding(.top, 8)
                     }
@@ -45,11 +51,45 @@ struct HelpView: View {
                     .frame(maxWidth: .infinity)
                 }
             }
+            .tint(Color(UIColor(hex: accentHex)))
             .navigationTitle("Help")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
         }
-        .tint(DS.ink)
+    }
+
+    private var accentSettings: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Accent").font(.headline)
+            Text("Sliders, switches and selected chips use this colour. The background and the cards stay paper.")
+                .font(.footnote).foregroundStyle(DS.secondary)
+
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 72), spacing: 12)], alignment: .leading, spacing: 12) {
+                swatch("Ink", "#111317")
+                ForEach(Palette.all, id: \.hex) { s in swatch(s.name, s.hex) }
+            }
+
+            ColorPicker("Custom", selection: Binding(
+                get: { Color(UIColor(hex: accentHex)) },
+                set: { accentHex = UIColor($0).hexString }))
+                .font(.footnote)
+        }
+    }
+
+    private func swatch(_ name: String, _ hex: String) -> some View {
+        Button { accentHex = hex } label: {
+            VStack(spacing: 6) {
+                Circle()
+                    .fill(Color(UIColor(hex: hex)))
+                    .frame(width: 30, height: 30)
+                    .overlay {
+                        Circle().strokeBorder(DS.ink, lineWidth: accentHex.uppercased() == hex ? 2 : 0)
+                    }
+                Text(name).font(.caption2).foregroundStyle(DS.secondary)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.plain)
     }
 
     @ViewBuilder
@@ -130,6 +170,7 @@ struct HelpView: View {
             .p("Tap **Save** or **Share**. Seamless makes an MP4 video, 1080 × 1920 px, at 30 frames per second. The file name is, for example, `DSC_0420_reel.mp4`."),
             .note("The video has no sound. When you post on Instagram, add music or your voice."),
         ]
+        case .settings: []
         case .batch: [
             .p("Use Batch to apply the same settings to a maximum of 10 photos."),
             .h("1. Add steps"),

@@ -68,11 +68,13 @@ struct PrimaryButton: ButtonStyle {
 /// The five colours from the site, used for the empty space around a photo.
 enum Palette {
     struct Swatch { let name: String; let hex: String }
+    /// Low-chroma Pantone tones that sit next to ink without fighting the photo.
     static let all: [Swatch] = [
-        .init(name: "Violet", hex: "#A78BFA"),
-        .init(name: "Cyan", hex: "#22D3EE"),
-        .init(name: "Gold", hex: "#FBBF24"),
-        .init(name: "Rose", hex: "#F472B6"),
-        .init(name: "Emerald", hex: "#34D399"),
+        .init(name: "Stone", hex: "#969EA5"),   // Pantone 4151 C
+        .init(name: "Slate", hex: "#9FAFBC"),   // Pantone 5445 C
+        .init(name: "Sage",  hex: "#A3AC9E"),   // Pantone 5665 C
+        .init(name: "Sand",  hex: "#D6D2C4"),   // Pantone 7527 C
+        .init(name: "Mauve", hex: "#B3AACD"),   // Pantone 2645 C
+        .init(name: "Teal",  hex: "#8FA6A3"),   // Pantone 5493 C
     ]
 }
