@@ -19,7 +19,7 @@ struct ContentView: View {
         NavigationStack {
             Group {
                 if editor.photo == nil {
-                    StartView(pick: $pick, status: editor.status)
+                    StartView(pick: $pick, status: editor.status, onHelp: { showHelp = true })
                 } else {
                     EditorView(model: editor, batch: batch, showBatch: $showBatch,
                                shareRequest: $shareRequest, showsWordmark: true,
@@ -31,6 +31,7 @@ struct ContentView: View {
         .toolbarBackground(DS.bar, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar(editor.photo == nil ? .hidden : .visible, for: .navigationBar)
             .toolbar {
                 if editor.photo != nil {
                     ToolbarItem(placement: .topBarLeading) {
@@ -39,9 +40,11 @@ struct ContentView: View {
                         }
                     }
                 }
-                ToolbarItemGroup(placement: .topBarTrailing) {
-                    Button { showBatch = true } label: { Label("Batch", systemImage: "square.stack.3d.up") }
-                    Button { showHelp = true } label: { Label("Help", systemImage: "questionmark.circle") }
+                if editor.photo != nil {
+                    ToolbarItemGroup(placement: .topBarTrailing) {
+                        Button { showBatch = true } label: { Label("Batch", systemImage: "square.stack.3d.up") }
+                        Button { showHelp = true } label: { Label("Help", systemImage: "questionmark.circle") }
+                    }
                 }
             }
             .navigationDestination(isPresented: $showBatch) {
@@ -89,6 +92,7 @@ struct ContentView: View {
 struct StartView: View {
     @Binding var pick: PhotosPickerItem?
     var status: String?
+    var onHelp: () -> Void = {}
 
     var body: some View {
         ScrollView {
@@ -101,6 +105,9 @@ struct StartView: View {
                 Text("Select a photo").frame(minWidth: 180)
             }
             .buttonStyle(PrimaryButton())
+            Button("Help") { onHelp() }
+                .font(.footnote)
+                .foregroundStyle(DS.secondary)
             if let status { Text(status).foregroundStyle(.red).font(.footnote) }
         }
         .padding()
