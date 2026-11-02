@@ -12,21 +12,7 @@ struct EditorView: View {
     var showsWordmark = true
     var pick: Binding<PhotosPickerItem?>? = nil
     var accent: Color = DS.ink
-    @Environment(HingeState.self) private var hinge
     @State private var controlsHeight: CGFloat = 0
-
-    /// The unfolded Duo keeps a strip on the right for the camera and the status items.
-    /// Only a foldable has one: an iPhone in landscape is also inset on the right, but
-    /// that inset is the notch, not a camera rail.
-    private var strip: CGFloat {
-        #if DEBUG
-        if ProcessInfo.processInfo.arguments.contains("-demoStrip") { return 62 }
-        #endif
-        guard hinge.openness != .none else { return 0 }
-        return UIApplication.shared.connectedScenes
-            .compactMap { ($0 as? UIWindowScene)?.windows.first?.safeAreaInsets.right }
-            .max() ?? 0
-    }
 
     var onHelp: (() -> Void)?
     var onExplain: (() -> Void)?
@@ -34,33 +20,23 @@ struct EditorView: View {
     var hidesNavigationBar = true
 
     @ViewBuilder
-    private var iconButtons: some View {
-        if let pick {
-            PhotosPicker(selection: pick, matching: .images, photoLibrary: .shared()) {
-                Image(systemName: "photo.badge.plus")
-            }
-            .buttonStyle(QuietBarButton())
-            .accessibilityLabel("New photo")
-        }
-        if let onHelp {
-            Button(action: onHelp) {
-                Image(systemName: "questionmark.circle")
-            }
-            .buttonStyle(QuietBarButton())
-            .accessibilityLabel("Help")
-        }
-    }
-
-    @ViewBuilder
     private var iconRow: some View {
-        HStack(spacing: 0) { iconButtons }
-    }
-
-    /// The camera strip is a narrow column down the right edge. The two icons stack in
-    /// it, under the system status items, instead of running along the top edge.
-    @ViewBuilder
-    private var stripRail: some View {
-        VStack(spacing: 0) { iconButtons }
+        HStack(spacing: 0) {
+            if let pick {
+                PhotosPicker(selection: pick, matching: .images, photoLibrary: .shared()) {
+                    Image(systemName: "photo.badge.plus")
+                }
+                .buttonStyle(QuietBarButton())
+                .accessibilityLabel("New photo")
+            }
+            if let onHelp {
+                Button(action: onHelp) {
+                    Image(systemName: "questionmark.circle")
+                }
+                .buttonStyle(QuietBarButton())
+                .accessibilityLabel("Help")
+            }
+        }
     }
 
     var body: some View {
@@ -78,20 +54,13 @@ struct EditorView: View {
 
             let header = VStack(spacing: 0) {
                 if showsWordmark && !compact {
-                    // Unfolded, the two icons stack under the system status column: in the
-                    // landscape camera strip when it exists, otherwise at the top right of
-                    // the header, which then grows to fit them.
                     HStack(spacing: 0) {
                         Text("Seamless")
                             .font(.system(size: 17, weight: .semibold))
                             .tracking(0.3)
                             .foregroundStyle(DS.text)
                         Spacer()
-                        if !hinge.splitAtFold {
-                            iconRow
-                        } else if strip < 1 {
-                            stripRail
-                        }
+                        iconRow
                     }
                     .padding(.leading, 12).padding(.trailing, 12).padding(.top, 4)
 
@@ -153,14 +122,6 @@ struct EditorView: View {
             }
         }
         .background(DS.bg)
-        .overlay(alignment: .topTrailing) {
-            if strip >= 1 {
-                stripRail
-                    .frame(width: strip)
-                    .padding(.top, 100)
-                    .ignoresSafeArea(edges: [.top, .trailing])
-            }
-        }
         .toolbar(hidesNavigationBar ? .hidden : .visible, for: .navigationBar)
     }
 }
