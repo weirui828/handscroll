@@ -301,9 +301,8 @@ struct CanvasView: View {
             // the ratio sits inside the bracket
             Text(shapeLabel)
                 .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.92))
-                .padding(.horizontal, 5).padding(.vertical, 2)
-                .background(.black.opacity(0.26), in: Capsule())
+                .foregroundStyle(.white.opacity(0.95))
+                .shadow(color: .black.opacity(0.5), radius: 2, y: 1)
                 .padding(.trailing, 14).padding(.bottom, 12)
         }
         .contentShape(Rectangle())
