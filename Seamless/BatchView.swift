@@ -199,7 +199,7 @@ struct FixView: View {
     var body: some View {
         NavigationStack {
             EditorView(model: model, batch: nil, showBatch: $showBatch, shareRequest: $shareRequest,
-                       showsWordmark: false, showsExportBar: false, hidesNavigationBar: false)
+                       showsExportActions: false)
                 .navigationTitle("\(ctx.base) · step \(stepNumber)")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {

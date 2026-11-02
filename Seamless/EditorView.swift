@@ -9,86 +9,96 @@ struct EditorView: View {
     var batch: BatchModel?              // nil while adjusting one batch photo
     @Binding var showBatch: Bool
     @Binding var shareRequest: ShareRequest?
-    var showsWordmark = true
     var pick: Binding<PhotosPickerItem?>? = nil
     var accent: Color = DS.ink
-    @State private var controlsHeight: CGFloat = 0
-
     var onHelp: (() -> Void)?
     var onExplain: (() -> Void)?
-    var showsExportBar = true
-    var hidesNavigationBar = true
+    /// False while adjusting one batch photo: that screen has its own Done/Cancel bar.
+    var showsExportActions = true
+    @State private var controlsHeight: CGFloat = 0
+    @State private var showResult = false
+    @State private var note: String?
+    @State private var noteTask: Task<Void, Never>?
+    @Environment(HingeState.self) private var hinge
 
-    @ViewBuilder
-    private var iconRow: some View {
-        HStack(spacing: 0) {
-            if let pick {
-                PhotosPicker(selection: pick, matching: .images, photoLibrary: .shared()) {
-                    Image(systemName: "photo.badge.plus")
-                }
-                .buttonStyle(QuietBarButton())
-                .accessibilityLabel("New photo")
-            }
-            if let onHelp {
-                Button(action: onHelp) {
-                    Image(systemName: "questionmark.circle")
-                }
-                .buttonStyle(QuietBarButton())
-                .accessibilityLabel("Help")
-            }
+    /// The folded Duo runs on its outer display. The system puts the bars on the side
+    /// there, so the mode switch floats over the canvas instead of taking a row.
+    private var onOuterDisplay: Bool { hinge.openness == .closed }
+
+    private var modePicker: some View {
+        Picker("Mode", selection: $model.mode) {
+            ForEach(Mode.allCases) { Text($0.rawValue).tag($0) }
+        }
+        .pickerStyle(.segmented)
+    }
+
+    private var currentStep: Step? { model.captureStep() }
+    private var currentStepAdded: Bool {
+        guard let batch, let step = currentStep else { return false }
+        return batch.steps.contains { $0.sameAs(step) }
+    }
+
+    private func addCurrentStep() {
+        guard let batch, let step = currentStep, !currentStepAdded else { return }
+        flash(batch.add(step))
+    }
+
+    private func flash(_ text: String) {
+        noteTask?.cancel()
+        withAnimation(.easeOut(duration: 0.15)) { note = text }
+        noteTask = Task {
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeIn(duration: 0.25)) { note = nil }
+        }
+    }
+
+    private func shareFiles() {
+        Task {
+            let urls = await model.exportFiles()
+            if urls.isEmpty { showResult = true }
+            else { shareRequest = ShareRequest(items: urls) }
+        }
+    }
+
+    private func saveFiles() {
+        Task {
+            let urls = await model.exportFiles()
+            if !urls.isEmpty { await model.saveToPhotos(urls) }
+            showResult = true
         }
     }
 
     var body: some View {
         GeometryReader { geo in
-            // a wide, on-purpose window gets two panes; everything else stacks with the
-            // header at the top, so the wordmark never floats in the middle of the screen
             #if DEBUG
             let forcePanes = ProcessInfo.processInfo.arguments.contains("-demoPanes")
             #else
             let forcePanes = false
             #endif
-            let sideBySide = (geo.size.width >= 520 && geo.size.width > geo.size.height * 1.05) || forcePanes
+            let sideBySide = !onOuterDisplay && (geo.size.width >= 520 && geo.size.width > geo.size.height * 1.05) || forcePanes
             let compact = !sideBySide && geo.size.height < 620
             let controlsWidth = min(400, geo.size.width * 0.42)
 
             let header = VStack(spacing: 0) {
-                if showsWordmark && !compact {
-                    HStack(spacing: 0) {
-                        Text("Seamless")
-                            .font(.system(size: 17, weight: .semibold))
-                            .tracking(0.3)
-                            .foregroundStyle(DS.text)
-                        Spacer()
-                        iconRow
-                    }
-                    // In the two-pane layout the window top is the screen edge, so the
-                    // header needs its own margin from the top.
-                    .padding(.leading, 12).padding(.trailing, 12)
-                    .padding(.top, sideBySide ? 20 : 4)
-
-                }
-                Picker("Mode", selection: $model.mode) {
-                    ForEach(Mode.allCases) { Text($0.rawValue).tag($0) }
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal, 12).padding(.vertical, 6)
+                modePicker
+                    .padding(.horizontal, 12)
+                    .padding(.top, sideBySide ? 20 : 10)
+                    .padding(.bottom, 6)
                 Divider().overlay(DS.stroke)
             }
             .background(DS.bar)
 
-            let controls = VStack(spacing: 0) {
-                ScrollView {
-                    Controls(model: model, compact: compact, accent: accent,
-                             roomy: sideBySide, onExplain: onExplain).padding(12)
-                }
-                .scrollBounceBehavior(.basedOnSize)
-                if showsExportBar {
-                    Divider().overlay(DS.stroke)
-                    ExportActions(model: model, batch: batch,
-                                  showBatch: $showBatch, shareRequest: $shareRequest)
-                }
+            let controls = ScrollView {
+                Controls(model: model, compact: compact, accent: accent,
+                         roomy: sideBySide, onExplain: onExplain)
+                    .padding(12)
+                    .background(GeometryReader { proxy in
+                        Color.clear.preference(key: ControlsHeightKey.self, value: proxy.size.height)
+                    })
             }
+            .scrollBounceBehavior(.basedOnSize)
+            .onPreferenceChange(ControlsHeightKey.self) { controlsHeight = $0 }
 
             if sideBySide {
                 HStack(spacing: 0) {
@@ -99,33 +109,90 @@ struct EditorView: View {
                         .frame(width: controlsWidth)
                         .background(DS.bg)
                 }
+            } else if onOuterDisplay {
+                // Folded: the system puts its bars on the side, so the mode switch
+                // floats over the canvas and the photo keeps the full height.
+                VStack(spacing: 0) {
+                    ZStack(alignment: .bottom) {
+                        CanvasView(model: model, onExplain: onExplain)
+                        modePicker
+                            .padding(6)
+                            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+                            .padding(.horizontal, 20)
+                            .padding(.bottom, 60)
+                    }
+                    .frame(maxHeight: .infinity)
+                    Divider().overlay(DS.stroke)
+                    controls
+                        .frame(height: min(max(controlsHeight, 0), geo.size.height * (compact ? 0.45 : 0.55)))
+                }
             } else {
                 VStack(spacing: 0) {
                     header
-                    // the photo sits in the middle of whatever is left above the controls
                     CanvasView(model: model, onExplain: onExplain)
                         .frame(maxHeight: .infinity)
                     Divider().overlay(DS.stroke)
-                    ScrollView {
-                        Controls(model: model, compact: compact, accent: accent)
-                            .padding(12)
-                            .background(GeometryReader { proxy in
-                                Color.clear.preference(key: ControlsHeightKey.self, value: proxy.size.height)
-                            })
-                    }
-                    .scrollBounceBehavior(.basedOnSize)
-                    .frame(height: min(max(controlsHeight, 0), geo.size.height * (compact ? 0.45 : 0.55)))
-                    .onPreferenceChange(ControlsHeightKey.self) { controlsHeight = $0 }
-                    if showsExportBar {
-                        Divider().overlay(DS.stroke)
-                        ExportActions(model: model, batch: batch,
-                                      showBatch: $showBatch, shareRequest: $shareRequest)
-                    }
+                    controls
+                        .frame(height: min(max(controlsHeight, 0), geo.size.height * (compact ? 0.45 : 0.55)))
                 }
             }
         }
         .background(DS.bg)
-        .toolbar(hidesNavigationBar ? .hidden : .visible, for: .navigationBar)
+        .overlay(alignment: .bottom) {
+            if let message = model.progress ?? (model.busy ? "Working…" : note) {
+                Text(message)
+                    .font(.footnote)
+                    .foregroundStyle(DS.text)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(.regularMaterial, in: Capsule())
+                    .padding(.bottom, 14)
+                    .allowsHitTesting(false)
+                    .transition(.opacity)
+            }
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                if let pick {
+                    PhotosPicker(selection: pick, matching: .images, photoLibrary: .shared()) {
+                        Label("New photo", systemImage: "photo.badge.plus")
+                    }
+                }
+                if let onHelp {
+                    Button(action: onHelp) {
+                        Label("Help", systemImage: "questionmark.circle")
+                    }
+                }
+                if let batch {
+                    Button { addCurrentStep() } label: {
+                        Label("Add to batch", systemImage: "plus.circle")
+                    }
+                    .disabled(currentStepAdded || model.busy || batch.steps.count >= maxSteps)
+
+                    Button { showBatch = true } label: {
+                        Label(batch.steps.isEmpty ? "Batch" : "Batch, \(batch.steps.count) steps",
+                              systemImage: batch.steps.isEmpty ? "rectangle.stack" : "rectangle.stack.fill")
+                    }
+                    .accessibilityValue("\(batch.steps.count) steps")
+                }
+                if showsExportActions {
+                    Button { saveFiles() } label: {
+                        Label("Save", systemImage: "square.and.arrow.down")
+                    }
+                    .disabled(model.busy)
+
+                    Button { shareFiles() } label: {
+                        Label("Share", systemImage: "square.and.arrow.up")
+                    }
+                    .disabled(model.busy)
+                }
+            }
+        }
+        .alert("Export", isPresented: $showResult) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(model.status ?? "No files were saved.")
+        }
     }
 }
 
@@ -840,163 +907,5 @@ private struct FillSheet: View {
         }
         .scrollBounceBehavior(.basedOnSize)
         .background(DS.bg)
-    }
-}
-
-private struct ExportActions: View {
-    @Bindable var model: EditorModel
-    var batch: BatchModel?
-    @Binding var showBatch: Bool
-    @Binding var shareRequest: ShareRequest?
-    @State private var showResult = false
-    @State private var note: String?
-    @State private var noteTask: Task<Void, Never>?
-    @State private var flying = false
-    @State private var flyFilled = false
-    @State private var flyX: CGFloat = -154
-    @State private var flyScale: CGFloat = 1
-    @State private var flyAlpha: CGFloat = 1
-    @State private var badgeBump = false
-
-    private var currentStep: Step? { model.captureStep() }
-
-    /// Adds the current settings, then lets a little count travel from the plus to the
-    /// batch icon so the two controls read as one thing.
-    private func addToBatch(added: Bool) {
-        guard let batch, !added, let step = currentStep else { return }
-        let text = batch.add(step)
-        flash(text)
-        // the plus sits one slot left of the batch icon; the step slides across and fills in
-        flying = true
-        flyFilled = false
-        flyX = -154
-        flyScale = 1
-        flyAlpha = 1
-        withAnimation(.easeInOut(duration: 0.36)) {
-            flyX = -110
-            flyScale = 0.9
-        }
-        Task {
-            try? await Task.sleep(for: .seconds(0.37))
-            withAnimation(.spring(response: 0.22, dampingFraction: 0.55)) {
-                flyFilled = true
-                flyScale = 1.12
-            }
-            badgeBump = true
-            try? await Task.sleep(for: .seconds(0.22))
-            withAnimation(.easeIn(duration: 0.12)) { flyAlpha = 0; flyScale = 0.7 }
-            try? await Task.sleep(for: .seconds(0.14))
-            flying = false
-            flyFilled = false
-            flyX = -154
-            badgeBump = false
-        }
-    }
-
-    /// Shows the result of a batch action for a moment, then takes it away again.
-    private func flash(_ text: String) {
-        noteTask?.cancel()
-        withAnimation(.easeOut(duration: 0.15)) { note = text }
-        noteTask = Task {
-            try? await Task.sleep(for: .seconds(3))
-            guard !Task.isCancelled else { return }
-            withAnimation(.easeIn(duration: 0.25)) { note = nil }
-        }
-    }
-
-    var body: some View {
-        VStack(spacing: 4) {
-            if model.busy {
-                HStack(spacing: 8) {
-                    ProgressView()
-                    Text(model.progress ?? "Saving…").font(.footnote).foregroundStyle(DS.secondary)
-                }
-            }
-            if let note {
-                Text(note)
-                    .font(.footnote).foregroundStyle(DS.secondary)
-                    .transition(.opacity)
-            }
-
-            HStack(spacing: 0) {
-                Spacer(minLength: 0)
-
-                if let batch {
-                    let added = currentStep.map { step in batch.steps.contains { $0.sameAs(step) } } ?? false
-                    Button {
-                        addToBatch(added: added)
-                    } label: {
-                        Image(systemName: "plus.circle")
-                    }
-                    .buttonStyle(QuietBarButton())
-                    .accessibilityLabel("Add to batch")
-                    .opacity(added || model.busy || batch.steps.count >= maxSteps ? 0.35 : 1)
-                    .disabled(added || model.busy || batch.steps.count >= maxSteps)
-
-                    Button { showBatch = true } label: {
-                        Image(systemName: "rectangle.stack")
-                            .overlay(alignment: .topTrailing) {
-                                if !batch.steps.isEmpty {
-                                    Text("\(batch.steps.count)")
-                                        .font(.system(size: 9, weight: .bold))
-                                        .foregroundStyle(DS.onInk)
-                                        .frame(minWidth: 15, minHeight: 15)
-                                        .background(DS.ink, in: Circle())
-                                        .offset(x: 4, y: -2)
-                                        .scaleEffect(badgeBump ? 1.35 : 1)
-                                        .animation(.spring(response: 0.25, dampingFraction: 0.5), value: badgeBump)
-                                }
-                            }
-                    }
-                    .buttonStyle(QuietBarButton())
-                    .accessibilityLabel("Batch")
-                    .accessibilityValue("\(batch.steps.count) steps")
-                }
-
-                Button {
-                    Task {
-                        let urls = await model.exportFiles()
-                        if urls.isEmpty { showResult = true }
-                        else { shareRequest = ShareRequest(items: urls) }
-                    }
-                } label: {
-                    Label("Share", systemImage: "square.and.arrow.up").labelStyle(.iconOnly)
-                }
-                .buttonStyle(QuietBarButton())
-                .accessibilityLabel("Share")
-
-                Button { Task {
-                    let urls = await model.exportFiles()
-                    if !urls.isEmpty { await model.saveToPhotos(urls) }
-                    showResult = true
-                } } label: {
-                    Label("Save", systemImage: "square.and.arrow.down").labelStyle(.iconOnly)
-                }
-                .buttonStyle(QuietBarButton())
-                .accessibilityLabel("Save")
-            }
-            .overlay(alignment: .trailing) {
-                if flying {
-                    // an empty slide leaves the plus and lands as a filled one: the step is stored
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(flyFilled ? DS.ink : Color.clear)
-                        .frame(width: 9, height: 13)
-                        .overlay(RoundedRectangle(cornerRadius: 3).stroke(DS.ink, lineWidth: 1.2))
-                        .scaleEffect(flyScale)
-                        .opacity(flyAlpha)
-                        .offset(x: flyX, y: -14)
-                        .allowsHitTesting(false)
-                }
-            }
-
-        }
-        .padding(.horizontal, 14).padding(.vertical, 8)
-        .background(DS.bar)
-        .overlay(alignment: .top) { Rectangle().fill(DS.stroke).frame(height: 1) }
-        .alert("Export", isPresented: $showResult) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(model.status ?? "No files were saved.")
-        }
     }
 }

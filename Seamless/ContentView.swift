@@ -25,7 +25,6 @@ struct ContentView: View {
                 } else {
                     EditorView(model: editor, batch: batch, showBatch: $showBatch,
                                shareRequest: $shareRequest,
-                               showsWordmark: true,
                                pick: $pick,
                                accent: Color(UIColor(hex: accentHex)),
                                onHelp: { helpTab = nil; helpScroll = nil; showHelp = true },
