@@ -293,18 +293,6 @@ struct CanvasView: View {
                         }
                         .accessibilityLabel("Output size")
 
-                        Button {
-                            model.showsWholePhoto ? model.fillFrame() : model.wholePhoto()
-                        } label: {
-                            Text(model.showsWholePhoto ? "Fit" : "Fill")
-                                .font(.footnote)
-                                .foregroundStyle(DS.secondary)
-                                .frame(minHeight: 44)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Fit or Fill")
-                        .accessibilityValue(model.showsWholePhoto ? "Fit" : "Fill")
-
                         if model.tallWarning {
                             Button { onExplain?() } label: {
                                 Image(systemName: "exclamationmark.circle")
@@ -316,6 +304,20 @@ struct CanvasView: View {
                             .accessibilityLabel("3:4 warning")
                             .accessibilityHint("Opens Help")
                         }
+
+                        Menu {
+                            Button("Fit") { model.wholePhoto() }
+                            Button("Fill") { model.fillFrame() }
+                        } label: {
+                            HStack(spacing: 3) {
+                                Text(model.showsWholePhoto ? "Fit" : "Fill")
+                                Image(systemName: "chevron.up.chevron.down").font(.system(size: 8, weight: .semibold))
+                            }
+                            .font(.footnote)
+                            .foregroundStyle(DS.secondary)
+                            .frame(minHeight: 44)
+                        }
+                        .accessibilityLabel("Frame")
 
                         if model.leavesGap {
                             Button { showFill = true } label: {
