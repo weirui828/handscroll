@@ -262,7 +262,7 @@ struct CanvasView: View {
     /// The crop-style corner: drag down for a taller slide, up for a wider one.
     private func cornerHandle(frame: Frame, h: CGFloat) -> some View {
         ZStack(alignment: .bottomTrailing) {
-            Color.clear.frame(width: 44, height: 44)
+            Color.clear.frame(width: 56, height: 56)
             Path { p in
                 p.move(to: CGPoint(x: 22, y: 4))
                 p.addLine(to: CGPoint(x: 22, y: 22))
@@ -271,9 +271,17 @@ struct CanvasView: View {
             .stroke(.white.opacity(0.9), style: StrokeStyle(lineWidth: 2, lineCap: .round))
             .frame(width: 26, height: 26)
             .padding(6)
+
+            // the ratio sits just outside the corner, quiet but always readable
+            Text(shapeLabel)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.92))
+                .padding(.horizontal, 5).padding(.vertical, 2)
+                .background(.black.opacity(0.28), in: Capsule())
+                .offset(x: -34, y: -2)
         }
         .contentShape(Rectangle())
-        .onTapGesture(count: 2) { if model.mode == .carousel { model.setShape(.auto) } }
+        .onTapGesture { cycleShape() }
         .gesture(
             DragGesture(minimumDistance: 6)
                 .onChanged { value in
@@ -289,6 +297,18 @@ struct CanvasView: View {
                 .onEnded { _ in shapeStart = nil }
         )
         .accessibilityLabel("Slide shape")
+        .accessibilityValue(shapeLabel)
+        .accessibilityHint("Tap to change, drag to adjust")
+    }
+
+    private var shapeLabel: String {
+        model.layout.shape.rawValue
+    }
+
+    private func cycleShape() {
+        let order: [Shape] = model.mode == .carousel ? [.auto, .r45, .r34, .r11] : [.r45, .r34, .r11]
+        let i = order.firstIndex(of: model.layout.shape) ?? 0
+        model.setShape(order[(i + 1) % order.count])
     }
 
     private var pinch: some Gesture {
