@@ -420,11 +420,6 @@ struct Controls: View {
                     .frame(height: 34)
             }
 
-            Toggle("Reverse", isOn: Binding(get: { model.reel.p1 < model.reel.p0 },
-                                           set: { reversePan(model, $0) }))
-                .font(.footnote)
-                .tint(DS.ink)
-
             inlineSlider("Vertical", value: $model.reel.v, range: 0...1, text: verticalLabel)
 
             inlineSlider("Zoom to", value: Binding(get: { model.reel.z1 },
@@ -521,15 +516,6 @@ private struct ControlsHeightKey: PreferenceKey {
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
 }
 
-/// The switch decides which end the pan starts from; the range itself stays.
-@MainActor
-private func reversePan(_ model: EditorModel, _ reverse: Bool) {
-    let a = model.reel.p0, b = model.reel.p1
-    guard a != b else { return }
-    if reverse, a < b { model.reel.p0 = b; model.reel.p1 = a }
-    if !reverse, a > b { model.reel.p0 = b; model.reel.p1 = a }
-}
-
 /// Two knobs on one track: the start and the end of the reel pan.
 struct RangeSlider: View {
     @Binding var lower: Double
@@ -556,13 +542,13 @@ struct RangeSlider: View {
                     .frame(width: hi - lo, height: 4)
                     .offset(x: lo + knob / 2)
 
-                knobView
+                knobView(filled: true)
                     .offset(x: lx)
                     .gesture(drag(width: usable, isLower: true))
                     .accessibilityLabel("Start")
                     .accessibilityValue("\(Int(lower * 100)) percent")
 
-                knobView
+                knobView(filled: false)
                     .offset(x: ux)
                     .gesture(drag(width: usable, isLower: false))
                     .accessibilityLabel("End")
@@ -571,12 +557,12 @@ struct RangeSlider: View {
         }
     }
 
-    private var knobView: some View {
+    private func knobView(filled: Bool) -> some View {
         Circle()
-            .fill(DS.card)
+            .fill(filled ? DS.ink : DS.card)
             .frame(width: knob, height: knob)
-            .shadow(color: .black.opacity(0.12), radius: 3, y: 1)
-            .overlay(Circle().stroke(DS.stroke, lineWidth: 1))
+            .shadow(color: .black.opacity(filled ? 0.18 : 0.12), radius: 3, y: 1)
+            .overlay(Circle().stroke(DS.stroke, lineWidth: filled ? 0 : 1))
     }
 
     private func drag(width: CGFloat, isLower: Bool) -> some Gesture {
