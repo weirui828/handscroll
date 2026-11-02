@@ -171,7 +171,7 @@ struct EditorView: View {
 
                     Button { showBatch = true } label: {
                         Label(batch.steps.isEmpty ? "Batch" : "Batch, \(batch.steps.count) steps",
-                              systemImage: batch.steps.isEmpty ? "rectangle.stack" : "rectangle.stack.fill")
+                              systemImage: "rectangle.stack")
                     }
                     .accessibilityValue("\(batch.steps.count) steps")
                 }
@@ -564,7 +564,6 @@ struct Controls: View {
             if model.geo != nil, model.mode == .reel { reelControls }
             if roomy, model.geo != nil, model.mode != .reel {
                 slideGroup
-                photoGroup
             }
 
             if let s = model.status { Text(s).font(.footnote).foregroundStyle(.secondary) }
@@ -581,7 +580,7 @@ struct Controls: View {
 
     @ViewBuilder
     private var slideGroup: some View {
-        group("Slide") {
+        group {
             if model.mode == .carousel {
                 HStack(spacing: 10) {
                     rowLabel("Slides").frame(width: 58, alignment: .leading)
@@ -620,12 +619,6 @@ struct Controls: View {
                 }
                 .accessibilityLabel("Output size")
             }
-        }
-    }
-
-    @ViewBuilder
-    private var photoGroup: some View {
-        group("Photo") {
             HStack(spacing: 10) {
                 rowLabel("Frame").frame(width: 58, alignment: .leading)
                 Picker("Frame", selection: Binding(get: { model.showsWholePhoto },
@@ -729,25 +722,6 @@ struct Controls: View {
             .overlay(RoundedRectangle(cornerRadius: 14).stroke(DS.stroke, lineWidth: 1))
     }
 
-    private func group<Content: View>(_ title: String, trailing: AnyView? = nil,
-                                     @ViewBuilder _ content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: compact ? 6 : 8) {
-            if !compact {
-                HStack {
-                    Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(DS.secondary)
-                    Spacer()
-                    trailing
-                }
-            } else if trailing != nil {
-                HStack { Spacer(); trailing }
-            }
-            content()
-        }
-        .padding(compact ? 10 : 14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(DS.card, in: RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(DS.stroke, lineWidth: 1))
-    }
 }
 
 /// Keeps all choices visible when they fit, and uses a native menu on narrow screens or larger text sizes.
