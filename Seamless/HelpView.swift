@@ -173,7 +173,7 @@ struct HelpView: View {
             .p("With **Blur**, the **Darken** slider makes the fill darker."),
             .h("Size and export"),
             .ul(["Tap the size line to change the output size.",
-                 "Tap **Fit** to show the whole photo, or **Fill** to fill the frame.",
+                 "Tap **Fit** to switch between showing the whole photo and filling the frame.",
                  "Tap the download icon to save to Photos, or the share icon to send to another app."]),
             .p("File names follow the photo name and the number: `DSC_0420_01.jpg`, `DSC_0420_02.jpg`."),
         ]

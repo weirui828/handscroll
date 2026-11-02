@@ -293,19 +293,17 @@ struct CanvasView: View {
                         }
                         .accessibilityLabel("Output size")
 
-                        Menu {
-                            Button("Fit") { model.wholePhoto() }
-                            Button("Fill") { model.fillFrame() }
+                        Button {
+                            model.showsWholePhoto ? model.fillFrame() : model.wholePhoto()
                         } label: {
-                            HStack(spacing: 3) {
-                                Text(model.showsWholePhoto ? "Fit" : "Fill")
-                                Image(systemName: "chevron.up.chevron.down").font(.system(size: 8, weight: .semibold))
-                            }
-                            .font(.footnote)
-                            .foregroundStyle(DS.secondary)
-                            .frame(minHeight: 44)
+                            Text(model.showsWholePhoto ? "Fit" : "Fill")
+                                .font(.footnote)
+                                .foregroundStyle(DS.secondary)
+                                .frame(minHeight: 44)
                         }
-                        .accessibilityLabel("Frame")
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Fit or Fill")
+                        .accessibilityValue(model.showsWholePhoto ? "Fit" : "Fill")
 
                         if model.tallWarning {
                             Button { onExplain?() } label: {
