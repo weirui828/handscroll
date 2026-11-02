@@ -15,37 +15,10 @@ struct EditorView: View {
     @Environment(HingeState.self) private var hinge
     @State private var controlsHeight: CGFloat = 0
 
-    /// The unfolded Duo keeps a strip on the right for the camera and the status items.
-    private var strip: CGFloat {
-        UIApplication.shared.connectedScenes
-            .compactMap { ($0 as? UIWindowScene)?.windows.first?.safeAreaInsets.right }
-            .max() ?? 0
-    }
-
     var onHelp: (() -> Void)?
     var onExplain: (() -> Void)?
     var showsExportBar = true
     var hidesNavigationBar = true
-
-    @ViewBuilder
-    private var iconRow: some View {
-        HStack(spacing: 0) {
-            if let pick {
-                PhotosPicker(selection: pick, matching: .images, photoLibrary: .shared()) {
-                    Image(systemName: "photo.badge.plus")
-                }
-                .buttonStyle(QuietBarButton())
-                .accessibilityLabel("New photo")
-            }
-            if let onHelp {
-                Button(action: onHelp) {
-                    Image(systemName: "questionmark.circle")
-                }
-                .buttonStyle(QuietBarButton())
-                .accessibilityLabel("Help")
-            }
-        }
-    }
 
     var body: some View {
         GeometryReader { geo in
@@ -63,12 +36,24 @@ struct EditorView: View {
                             .tracking(0.3)
                             .foregroundStyle(DS.text)
                         Spacer()
-                        if strip < 1 {
-                            iconRow
+                        HStack(spacing: 0) {
+                            if let pick {
+                                PhotosPicker(selection: pick, matching: .images, photoLibrary: .shared()) {
+                                    Image(systemName: "photo.badge.plus")
+                                }
+                                .buttonStyle(QuietBarButton())
+                                .accessibilityLabel("New photo")
+                            }
+                            if let onHelp {
+                                Button(action: onHelp) {
+                                    Image(systemName: "questionmark.circle")
+                                }
+                                .buttonStyle(QuietBarButton())
+                                .accessibilityLabel("Help")
+                            }
                         }
                     }
                     .padding(.leading, 12).padding(.trailing, 12).padding(.top, 4)
-
                 }
                 Picker("Mode", selection: $model.mode) {
                     ForEach(Mode.allCases) { Text($0.rawValue).tag($0) }
@@ -125,14 +110,6 @@ struct EditorView: View {
             }
         }
         .background(DS.bg)
-        .overlay(alignment: .topTrailing) {
-            if strip >= 1 {
-                iconRow
-                    .padding(.trailing, 16)
-                    .padding(.top, 150)
-                    .ignoresSafeArea(edges: .trailing)
-            }
-        }
         .toolbar(hidesNavigationBar ? .hidden : .visible, for: .navigationBar)
     }
 }
