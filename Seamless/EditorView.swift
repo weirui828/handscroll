@@ -151,7 +151,25 @@ struct CanvasView: View {
                 .allowsHitTesting(false)
             }
             VStack(spacing: 2) {
-                Text(model.sizeText).font(.footnote).foregroundStyle(DS.secondary).multilineTextAlignment(.center)
+                if model.mode == .reel {
+                    Text(model.sizeText).font(.footnote).foregroundStyle(DS.secondary)
+                } else {
+                    Menu {
+                        Picker("Size", selection: $model.outW) {
+                            ForEach(model.sizeChoices, id: \.width) { c in
+                                Text("\(c.width) × \(c.height) px").tag(CGFloat(c.width))
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 3) {
+                            Text(model.sizeText)
+                            Image(systemName: "chevron.up.chevron.down").font(.system(size: 8, weight: .semibold))
+                        }
+                        .font(.footnote)
+                        .foregroundStyle(DS.secondary)
+                    }
+                    .accessibilityLabel("Output size")
+                }
                 if model.tallWarning {
                     Text("Too tall for scheduling tools. Post from the Instagram app.")
                         .font(.caption).foregroundStyle(.orange).multilineTextAlignment(.center)
@@ -409,15 +427,6 @@ private struct ExportActions: View {
         }
     }
 
-    /// The stored value is the pixel width; the menu speaks in quality names.
-    private var qualityName: String {
-        switch Int(model.outW) {
-        case 1440: return "High"
-        case 2160: return "Maximum"
-        default: return "Standard"
-        }
-    }
-
     var body: some View {
         VStack(spacing: 4) {
             if model.busy {
@@ -433,27 +442,6 @@ private struct ExportActions: View {
             }
 
             HStack(spacing: 2) {
-                Menu {
-                    Section("Image quality") {
-                        Picker("Image quality", selection: $model.outW) {
-                            Text("Standard").tag(CGFloat(1080))
-                            Text("High").tag(CGFloat(1440))
-                            Text("Maximum").tag(CGFloat(2160))
-                        }
-                    }
-                } label: {
-                    HStack(spacing: 4) {
-                        Text(qualityName).font(.footnote.weight(.medium))
-                        Image(systemName: "chevron.up.chevron.down").font(.system(size: 9, weight: .semibold))
-                    }
-                    .foregroundStyle(DS.secondary)
-                    .frame(height: 44)
-                    .padding(.trailing, 6)
-                }
-                .disabled(model.busy)
-
-                Spacer(minLength: 8)
-
                 if let batch {
                     Button {
                         if let step = model.captureStep() { flash(batch.add(step)) }
@@ -493,6 +481,8 @@ private struct ExportActions: View {
                 }
                 .buttonStyle(QuietBarButton())
                 .accessibilityLabel("Share")
+
+                Spacer(minLength: 8)
 
                 Button { Task {
                     let urls = await model.exportFiles()

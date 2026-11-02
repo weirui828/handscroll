@@ -208,6 +208,13 @@ final class EditorModel {
         return "\(count)\(ratioLabel(f.a)) · \(Int(f.pw)) × \(Int(f.ph)) px · \(share)% of the photo shows"
     }
 
+    /// The output sizes on offer, with the height that the current shape gives them.
+    var sizeChoices: [(width: Int, height: Int)] {
+        guard let geo, photo != nil, mode != .reel else { return [] }
+        let a = geo.panelAspect(layout)
+        return [1080, 1440, 2160].map { w in (w, Int((CGFloat(w) / a).rounded())) }
+    }
+
     /// The one line under the photo. The slide count, shape and share are already on screen
     /// in the chips, so this only states the output size.
     var sizeText: String {
