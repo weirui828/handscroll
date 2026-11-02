@@ -158,6 +158,8 @@ struct CanvasView: View {
                     let ah = isReel ? reelSize.height : frame.fh
                     let fit = max(0.001, min(max(1, geo.size.width - 24) / aw, max(1, geo.size.height - 12) / ah))
                     let w = aw * fit, h = ah * fit
+                    let photoTop = (geo.size.height - h) / 2
+                    let photoLeft = (geo.size.width - w) / 2
                     ZStack {
                         Image(uiImage: img).resizable().frame(width: w, height: h)
                             .overlay(alignment: .bottom) {
@@ -234,18 +236,22 @@ struct CanvasView: View {
                                 .frame(width: w, height: h + 36)
                             }
 
+                            // both hints sit next to the handle they talk about
                             if frame.n > 1, !slidesHintDone {
                                 hintCapsule("Drag for slides", icon: "arrow.left.and.right") {
                                     slidesHintDone = true
                                 }
-                                .position(x: min(max(w / CGFloat(max(frame.n, 1)), 60), w - 60), y: 30)
+                                .position(x: min(max(photoLeft + w / CGFloat(max(frame.n, 1)), 80), geo.size.width - 80),
+                                          y: max(24, photoTop - 22))
                             }
                             if !shapeHintDone {
                                 hintCapsule("Drag for shape", icon: "arrow.up.left.and.arrow.down.right") {
                                     shapeHintDone = true
                                 }
-                                .frame(width: w, height: h, alignment: .bottomTrailing)
-                                .padding(.trailing, 52).padding(.bottom, 46)
+                                .position(x: min(max(photoLeft + w - 92, 92), geo.size.width - 92),
+                                          y: photoTop + h + 26 <= geo.size.height - 46
+                                            ? photoTop + h + 26
+                                            : photoTop + h - 64)
                             }
 
                             // and the bottom-right corner sets the shape
