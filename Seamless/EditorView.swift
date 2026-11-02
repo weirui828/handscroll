@@ -75,7 +75,7 @@ struct EditorView: View {
 
             if sideBySide {
                 HStack(spacing: 0) {
-                    CanvasView(model: model, inset: 20)
+                    CanvasView(model: model, inset: 20, onExplain: onHelp)
                     Divider().overlay(DS.stroke)
                     VStack(spacing: 0) { header; controls }
                         .frame(width: controlsWidth)
@@ -85,7 +85,7 @@ struct EditorView: View {
                 VStack(spacing: 0) {
                     header
                     // the photo sits in the middle of whatever is left above the controls
-                    CanvasView(model: model)
+                    CanvasView(model: model, onExplain: onHelp)
                         .frame(maxHeight: .infinity)
                     Divider().overlay(DS.stroke)
                     ScrollView {
@@ -114,6 +114,7 @@ struct EditorView: View {
 struct CanvasView: View {
     @Bindable var model: EditorModel
     var inset: CGFloat = 0
+    var onExplain: (() -> Void)? = nil
     @AppStorage("seamless.hint.slides") private var slidesHintDone = false
     @AppStorage("seamless.hint.shape") private var shapeHintDone = false
     @State private var hintPulse = false
@@ -295,8 +296,12 @@ struct CanvasView: View {
                     }
                 }
                 if model.tallWarning {
-                    Text("Too tall for scheduling tools. Post from the Instagram app.")
-                        .font(.caption).foregroundStyle(.orange).multilineTextAlignment(.center)
+                    Button { onExplain?() } label: {
+                        Text("Too tall for scheduling tools. Post from the Instagram app.")
+                            .font(.caption).foregroundStyle(.orange).multilineTextAlignment(.center)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityHint("Opens Help")
                 }
             }
             .padding(.horizontal, 12).padding(.bottom, 6)

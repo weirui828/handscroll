@@ -1,9 +1,9 @@
 import SwiftUI
 
 enum HelpTab: String, CaseIterable, Identifiable {
-    case carousel = "Carousel", fit = "Fit", crop = "Crop", reel = "Reel", batch = "Batch", settings = "Settings"
+    case basics = "Basics", carousel = "Carousel", fit = "Fit", crop = "Crop", reel = "Reel", batch = "Batch", settings = "Settings"
     var id: String { rawValue }
-    init(_ m: Mode) { self = HelpTab(rawValue: m.rawValue) ?? .carousel }
+    init(_ m: Mode) { self = HelpTab(rawValue: m.rawValue) ?? .basics }
 }
 
 private enum Block {
@@ -146,6 +146,27 @@ struct HelpView: View {
 
     private func blocks(_ tab: HelpTab) -> [Block] {
         switch tab {
+        case .basics: [
+            .p("Carousel, Fit and Crop all start from one photo and end in image files. This chapter covers what they share."),
+            .h("Move and zoom"),
+            .ul(["Drag the photo to move it.", "Pinch to zoom.", "Double-tap the photo to go back to the start."]),
+            .h("Shape"),
+            .p("The corner marks at the bottom right set the shape of the frame."),
+            .ul(["Drag the corner down for a taller frame, or up for a wider frame.",
+                 "Tap the corner to step through **Auto**, **4:5**, **3:4** and **1:1**."]),
+            .p("**4:5** is the safe shape. Instagram and scheduling tools all accept it."),
+            .h("The 3:4 warning"),
+            .p("If the frame is taller than 4:5, a warning shows below the photo: **Too tall for scheduling tools. Post from the Instagram app.**"),
+            .p("The Instagram app accepts 3:4. Tools that schedule posts stop at 4:5, so a 3:4 post cannot be scheduled."),
+            .h("Empty space"),
+            .p("If the photo does not fill the frame, the space around it needs a fill. Tap **Blur** below the photo and choose **Blur**, **Black**, **White** or **Color**."),
+            .p("With **Blur**, the **Darken** slider makes the fill darker."),
+            .h("Size and export"),
+            .ul(["Tap the size line to change the output size.",
+                 "Tap **Fit** to show the whole photo, or **Fill** to fill the frame.",
+                 "Tap the download icon to save to Photos, or the share icon to send to another app."]),
+            .p("File names follow the photo name and the number: `DSC_0420_01.jpg`, `DSC_0420_02.jpg`."),
+        ]
         case .carousel: [
             .h("What it does"),
             .p("Carousel cuts one wide photo into slides. On Instagram, people swipe through the slides and see one continuous photo."),
@@ -155,41 +176,19 @@ struct HelpView: View {
                  "Drag it to the left to remove a slide. You can have 2 to 5 slides."]),
             .p("The line below the photo shows the number of slides and the size of each slide."),
             .img("help-carousel"),
-            .h("Change the shape"),
-            .ol(["Find the corner marks at the bottom right of the photo.",
-                 "Drag the corner down for a taller slide, or up for a wider slide.",
-                 "Tap the corner to step through **Auto**, **4:5**, **3:4** and **1:1**."]),
-            .p("**Auto** keeps all of the photo. **4:5** is the safe shape for scheduling tools."),
-            .note("**3:4** works only when you post from the Instagram app. Scheduling tools accept up to 4:5."),
-            .h("Move and zoom"),
-            .ul(["Drag the photo to move it.", "Pinch to zoom.", "Double-tap the photo to go back to the start."]),
-            .h("Empty space"),
-            .p("If the photo does not fill the frame, the space around it needs a fill. Tap **Blur** below the photo, then choose **Blur**, **Black**, **White** or **Color**."),
-            .p("With **Blur**, the **Darken** slider makes the fill darker."),
-            .h("Size and export"),
-            .ul(["Tap the size line to change the output size.",
-                 "Tap **Fit** to show the whole photo, or **Fill** to fill the frame.",
-                 "Tap the download icon to save the slides to Photos, or the share icon to send them to another app."]),
-            .p("File names follow the photo and the slide number: `DSC_0420_01.jpg`, `DSC_0420_02.jpg`."),
+            .p("For move, zoom, shape, the fill and export, see **Basics**."),
             .p("On Instagram, post the slides as one carousel, in order."),
         ]
         case .fit: [
             .p("Fit puts the whole photo on a tall frame, so it uses more of the screen in the Instagram feed."),
-            .h("Shape"),
-            .p("Tap the corner at the bottom right to step through **4:5**, **3:4** and **1:1**. Drag the corner to change the shape continuously."),
-            .note("**4:5** is safe for scheduling tools. **3:4** works only in the Instagram app."),
-            .h("Move and zoom"),
-            .p("Drag the photo to move it. Pinch to zoom. Double-tap to go back to the start. For a margin on all sides, zoom out a small amount."),
-            .h("Fill"),
-            .p("Tap **Blur** below the photo to choose how the space around the photo is filled."),
-            .h("Export"),
-            .p("Tap the download icon to save the image to Photos, or the share icon to send it to another app."),
+            .p("Tap the corner at the bottom right to choose a shape, or drag it. Use a small zoom out for a margin on all sides."),
+            .p("For move, zoom, the fill and export, see **Basics**."),
         ]
         case .crop: [
             .p("Crop makes a tall version of the photo for Instagram. You keep the full photo for your website."),
             .ol(["Tap the corner at the bottom right to choose a shape.",
-                 "Drag and pinch the photo until the frame shows the part that you want.",
-                 "Tap the download icon to save, or the share icon to send."]),
+                 "Drag and pinch the photo until the frame shows the part that you want."]),
+            .p("For the fill and export, see **Basics**."),
         ]
         case .reel: [
             .p("Reel makes a short video that moves slowly across the photo."),
