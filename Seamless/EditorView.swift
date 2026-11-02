@@ -10,6 +10,7 @@ struct EditorView: View {
     @Binding var shareRequest: ShareRequest?
     var showsWordmark = true
     @Environment(HingeState.self) private var hinge
+    @State private var controlsHeight: CGFloat = 0
 
     var onHelp: (() -> Void)?
     var showsExportBar = true
@@ -72,12 +73,25 @@ struct EditorView: View {
             } else {
                 VStack(spacing: 0) {
                     header
-                    let aspect = model.mode == .reel ? reelSize.height / reelSize.width : model.photoAspect
-                    let ideal = geo.size.width / max(0.25, aspect) + 54
+                    // the photo sits in the middle of whatever is left above the controls
                     CanvasView(model: model)
-                        .frame(height: max(180, min(ideal, geo.size.height - 320)))
+                        .frame(maxHeight: .infinity)
                     Divider().overlay(DS.stroke)
-                    controls
+                    ScrollView {
+                        Controls(model: model)
+                            .padding(12)
+                            .background(GeometryReader { proxy in
+                                Color.clear.preference(key: ControlsHeightKey.self, value: proxy.size.height)
+                            })
+                    }
+                    .scrollBounceBehavior(.basedOnSize)
+                    .frame(height: min(max(controlsHeight, 140), geo.size.height * 0.55))
+                    .onPreferenceChange(ControlsHeightKey.self) { controlsHeight = $0 }
+                    if showsExportBar {
+                        Divider().overlay(DS.stroke)
+                        ExportActions(model: model, batch: batch,
+                                      showBatch: $showBatch, shareRequest: $shareRequest)
+                    }
                 }
             }
         }
@@ -494,6 +508,11 @@ struct AdaptivePicker<Selection: Hashable, Choices: View>: View {
         }
         .frame(maxWidth: .infinity)
     }
+}
+
+private struct ControlsHeightKey: PreferenceKey {
+    nonisolated(unsafe) static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
 }
 
 /// The switch decides which end the pan starts from; the range itself stays.
