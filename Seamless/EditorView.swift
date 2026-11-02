@@ -424,6 +424,7 @@ private struct ExportActions: View {
     @State private var note: String?
     @State private var noteTask: Task<Void, Never>?
     @State private var flying = false
+    @State private var flyFilled = false
     @State private var flyX: CGFloat = -154
     @State private var flyScale: CGFloat = 1
     @State private var flyAlpha: CGFloat = 1
@@ -437,23 +438,30 @@ private struct ExportActions: View {
         guard let batch, !added, let step = currentStep else { return }
         let text = batch.add(step)
         flash(text)
-        badgeBump = true
-        Task { try? await Task.sleep(for: .seconds(0.3)); badgeBump = false }
-        // the plus sits one slot left of the batch icon; the step slides across and shrinks in
+        // the plus sits one slot left of the batch icon; the step slides across and fills in
         flying = true
+        flyFilled = false
         flyX = -154
         flyScale = 1
-        flyAlpha = 0.95
-        withAnimation(.easeInOut(duration: 0.4)) {
+        flyAlpha = 1
+        withAnimation(.easeInOut(duration: 0.36)) {
             flyX = -110
-            flyScale = 0.45
+            flyScale = 0.9
         }
         Task {
-            try? await Task.sleep(for: .seconds(0.3))
-            withAnimation(.easeIn(duration: 0.12)) { flyAlpha = 0 }
-            try? await Task.sleep(for: .seconds(0.2))
+            try? await Task.sleep(for: .seconds(0.37))
+            withAnimation(.spring(response: 0.22, dampingFraction: 0.55)) {
+                flyFilled = true
+                flyScale = 1.12
+            }
+            badgeBump = true
+            try? await Task.sleep(for: .seconds(0.22))
+            withAnimation(.easeIn(duration: 0.12)) { flyAlpha = 0; flyScale = 0.7 }
+            try? await Task.sleep(for: .seconds(0.14))
             flying = false
+            flyFilled = false
             flyX = -154
+            badgeBump = false
         }
     }
 
@@ -541,11 +549,11 @@ private struct ExportActions: View {
             }
             .overlay(alignment: .trailing) {
                 if flying {
-                    // one step reads as a small slide, not as a digit
+                    // an empty slide leaves the plus and lands as a filled one: the step is stored
                     RoundedRectangle(cornerRadius: 3)
-                        .fill(DS.ink)
+                        .fill(flyFilled ? DS.ink : Color.clear)
                         .frame(width: 9, height: 13)
-                        .overlay(RoundedRectangle(cornerRadius: 3).stroke(DS.onInk.opacity(0.35), lineWidth: 1))
+                        .overlay(RoundedRectangle(cornerRadius: 3).stroke(DS.ink, lineWidth: 1.2))
                         .scaleEffect(flyScale)
                         .opacity(flyAlpha)
                         .offset(x: flyX, y: -14)
