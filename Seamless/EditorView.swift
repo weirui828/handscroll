@@ -6,7 +6,6 @@ import SwiftUI
 struct EditorView: View {
     @Bindable var model: EditorModel
     var batch: BatchModel?              // nil while adjusting one batch photo
-    var accent: Accent
     @Binding var showBatch: Bool
     @Binding var shareRequest: ShareRequest?
     @Environment(HingeState.self) private var hinge
@@ -35,11 +34,11 @@ struct EditorView: View {
                 let controlsWidth = min(400, geo.size.width * 0.42)
                 let controls = VStack(spacing: 0) {
                     ScrollView {
-                        Controls(model: model, accent: accent).padding(12)
+                        Controls(model: model).padding(12)
                     }
                     .scrollBounceBehavior(.basedOnSize)
                     Divider().overlay(DS.stroke)
-                    ExportActions(model: model, batch: batch, accent: accent,
+                    ExportActions(model: model, batch: batch,
                                   showBatch: $showBatch, shareRequest: $shareRequest)
                 }
                 .background(DS.bg)
@@ -169,7 +168,6 @@ struct LabeledSlider: View {
 
 struct Controls: View {
     @Bindable var model: EditorModel
-    var accent: Accent
     @ScaledMetric(relativeTo: .body) private var slideWidth = 72.0
 
     var body: some View {
@@ -269,14 +267,14 @@ struct Controls: View {
                         VStack(spacing: 2) {
                             HStack(spacing: 3) {
                                 Text("\(n)").bold()
-                                if n == best && model.layout.shape == .auto { Circle().fill(accent.color).frame(width: 5, height: 5) }
+                                if n == best && model.layout.shape == .auto { Circle().fill(DS.secondary).frame(width: 5, height: 5) }
                             }
                             Text(geo.chipText(n: n, shape: model.layout.shape)).font(.caption2)
                         }
                         .frame(maxWidth: .infinity, minHeight: 44)
                     }
                     .buttonStyle(.bordered)
-                    .tint(model.layout.n == n ? accent.color : .gray)
+                    .tint(model.layout.n == n ? DS.ink : .gray)
                     .accessibilityLabel("\(n) slides")
                     .accessibilityValue(geo.chipText(n: n, shape: model.layout.shape))
                     .accessibilityAddTraits(model.layout.n == n ? .isSelected : [])
@@ -363,7 +361,6 @@ struct AdaptivePicker<Selection: Hashable, Choices: View>: View {
 private struct ExportActions: View {
     @Bindable var model: EditorModel
     var batch: BatchModel?
-    var accent: Accent
     @Binding var showBatch: Bool
     @Binding var shareRequest: ShareRequest?
     @State private var showResult = false
@@ -458,7 +455,7 @@ private struct ExportActions: View {
                 } } label: {
                     Label("Save", systemImage: "square.and.arrow.down")
                 }
-                .buttonStyle(PrimaryButton(accent: accent))
+                .buttonStyle(PrimaryButton())
 
             }
             .disabled(model.busy)

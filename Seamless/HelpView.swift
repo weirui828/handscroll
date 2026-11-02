@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum HelpTab: String, CaseIterable, Identifiable {
-    case carousel = "Carousel", fit = "Fit", crop = "Crop", reel = "Reel", batch = "Batch", settings = "Settings"
+    case carousel = "Carousel", fit = "Fit", crop = "Crop", reel = "Reel", batch = "Batch"
     var id: String { rawValue }
     init(_ m: Mode) { self = HelpTab(rawValue: m.rawValue) ?? .carousel }
 }
@@ -12,16 +12,10 @@ private enum Block {
 
 struct HelpView: View {
     @State var tab: HelpTab
-    @Binding var themeRaw: String
-    @Binding var customHex: String
-    var accent: Accent
     @Environment(\.dismiss) private var dismiss
 
-    init(startTab: HelpTab, themeRaw: Binding<String>, customHex: Binding<String>, accent: Accent) {
+    init(startTab: HelpTab) {
         _tab = State(initialValue: startTab)
-        _themeRaw = themeRaw
-        _customHex = customHex
-        self.accent = accent
     }
 
     var body: some View {
@@ -42,7 +36,7 @@ struct HelpView: View {
                 Divider()
                 ScrollView {
                     VStack(alignment: .leading, spacing: 12) {
-                        if tab == .settings { settings } else { ForEach(Array(blocks(tab).enumerated()), id: \.offset) { _, b in view(b) } }
+                        ForEach(Array(blocks(tab).enumerated()), id: \.offset) { _, b in view(b) }
                         Text("Seamless works only on your device. It does not send your photos to a server.")
                             .font(.footnote).foregroundStyle(.secondary).padding(.top, 8)
                     }
@@ -55,32 +49,7 @@ struct HelpView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
         }
-        .tint(accent.color)
-    }
-
-    private var settings: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Color").font(.headline)
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 100), spacing: 10)], alignment: .leading, spacing: 10) {
-                ForEach(Theme.allCases.filter { $0 != .custom }) { t in
-                    swatch(Color(UIColor(hex: t.hex!)), t.rawValue.capitalized, selected: themeRaw == t.rawValue) { themeRaw = t.rawValue }
-                }
-                swatch(Color(UIColor(hex: customHex)), "Custom", selected: themeRaw == Theme.custom.rawValue) { themeRaw = Theme.custom.rawValue }
-            }
-            ColorPicker("Custom color", selection: Binding(
-                get: { Color(UIColor(hex: customHex)) },
-                set: { customHex = UIColor($0).hexString; themeRaw = Theme.custom.rawValue }))
-        }
-    }
-
-    private func swatch(_ c: Color, _ name: String, selected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack { Circle().fill(c).frame(width: 18, height: 18); Text(name) }
-                .padding(.horizontal, 12).padding(.vertical, 8)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .overlay(RoundedRectangle(cornerRadius: 10).stroke(selected ? c : Color.secondary.opacity(0.3), lineWidth: selected ? 2 : 1))
-        }
-        .buttonStyle(.plain)
+        .tint(DS.ink)
     }
 
     @ViewBuilder
@@ -186,7 +155,6 @@ struct HelpView: View {
             .ol(["Tap **Make files**.", "Tap **Save to Photos**. To use another app or to save in Files, tap **Share**."]),
             .p("Each file name shows the photo, the step and the slide. For example, `DSC_0420_2-carousel_01.jpg` is photo DSC_0420, step 2 (Carousel), slide 1."),
         ]
-        case .settings: []
         }
     }
 }

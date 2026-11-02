@@ -9,18 +9,13 @@ struct ContentView: View {
     @State private var showBatch = false
     @State private var showHelp = false
     @State private var shareRequest: ShareRequest?
-    @AppStorage("seamless.theme") private var themeRaw = Theme.violet.rawValue
-    @AppStorage("seamless.accent") private var customHex = "#A78BFA"
-
-    private var accent: Accent { Accent(themeRaw: themeRaw, customHex: customHex) }
-
     var body: some View {
         NavigationStack {
             Group {
                 if editor.photo == nil {
-                    StartView(pick: $pick, status: editor.status, accent: accent)
+                    StartView(pick: $pick, status: editor.status)
                 } else {
-                    EditorView(model: editor, batch: batch, accent: accent, showBatch: $showBatch,
+                    EditorView(model: editor, batch: batch, showBatch: $showBatch,
                                shareRequest: $shareRequest)
                 }
             }
@@ -42,7 +37,7 @@ struct ContentView: View {
                 }
             }
             .navigationDestination(isPresented: $showBatch) {
-                BatchView(batch: batch, accent: accent, shareRequest: $shareRequest)
+                BatchView(batch: batch, shareRequest: $shareRequest)
             }
         }
         .tint(DS.ink)
@@ -55,8 +50,7 @@ struct ContentView: View {
         }
         .sheet(item: $shareRequest) { request in ShareSheet(items: request.items) }
         .sheet(isPresented: $showHelp) {
-            HelpView(startTab: showBatch ? .batch : editor.photo == nil ? .carousel : HelpTab(editor.mode),
-                     themeRaw: $themeRaw, customHex: $customHex, accent: accent)
+            HelpView(startTab: showBatch ? .batch : editor.photo == nil ? .carousel : HelpTab(editor.mode))
         }
     }
 }
@@ -64,7 +58,6 @@ struct ContentView: View {
 struct StartView: View {
     @Binding var pick: PhotosPickerItem?
     var status: String?
-    var accent: Accent
 
     var body: some View {
         ScrollView {
@@ -80,7 +73,7 @@ struct StartView: View {
             PhotosPicker(selection: $pick, matching: .images, photoLibrary: .shared()) {
                 Text("Select a photo").frame(minWidth: 180)
             }
-            .buttonStyle(PrimaryButton(accent: accent))
+            .buttonStyle(PrimaryButton())
             if let status { Text(status).foregroundStyle(.red).font(.footnote) }
         }
         .padding()

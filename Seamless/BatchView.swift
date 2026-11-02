@@ -3,7 +3,6 @@ import PhotosUI
 
 struct BatchView: View {
     @Bindable var batch: BatchModel
-    var accent: Accent
     @Binding var shareRequest: ShareRequest?
     @State private var picks: [PhotosPickerItem] = []
     @State private var fix: FixContext?
@@ -57,7 +56,7 @@ struct BatchView: View {
             Task { await batch.add(items); picks = [] }
         }
         .fullScreenCover(item: $fix) { ctx in
-            FixView(ctx: ctx, batch: batch, accent: accent) { fix = nil }
+            FixView(ctx: ctx, batch: batch) { fix = nil }
         }
     }
 
@@ -69,7 +68,7 @@ struct BatchView: View {
             }
             ForEach(Array(batch.steps.enumerated()), id: \.element.id) { i, step in
                 HStack {
-                    Text("\(i + 1)").bold().frame(width: 24, height: 24).background(accent.color.opacity(0.25), in: Circle())
+                    Text("\(i + 1)").bold().frame(width: 24, height: 24).background(DS.stroke, in: Circle())
                     Text(step.label)
                     Spacer()
                     Button { batch.remove(step) } label: {
@@ -139,7 +138,7 @@ struct BatchView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 6))
                 }
                 Text(photo.overrides[step.id] != nil ? "Step \(i + 1) · Adjusted" : "Step \(i + 1)")
-                    .font(.caption2).foregroundStyle(photo.overrides[step.id] != nil ? accent.color : .secondary)
+                    .font(.caption2).foregroundStyle(photo.overrides[step.id] != nil ? DS.text : DS.secondary)
             }
         }
         .buttonStyle(.plain)
@@ -152,7 +151,7 @@ struct BatchView: View {
                 Button { Task { await batch.run() } } label: {
                     Text(batch.progress ?? "Make files").frame(maxWidth: .infinity, minHeight: 24)
                 }
-                .buttonStyle(PrimaryButton(accent: accent))
+                .buttonStyle(PrimaryButton())
                 .disabled(!batch.canRun)
                 if !batch.results.isEmpty && !batch.busy {
                     Button { Task {
@@ -175,14 +174,13 @@ struct BatchView: View {
 struct FixView: View {
     let ctx: FixContext
     var batch: BatchModel
-    var accent: Accent
     var done: () -> Void
     @State private var model: EditorModel
     @State private var showBatch = false
     @State private var shareRequest: ShareRequest?
 
-    init(ctx: FixContext, batch: BatchModel, accent: Accent, done: @escaping () -> Void) {
-        self.ctx = ctx; self.batch = batch; self.accent = accent; self.done = done
+    init(ctx: FixContext, batch: BatchModel, done: @escaping () -> Void) {
+        self.ctx = ctx; self.batch = batch; self.done = done
         _model = State(initialValue: EditorModel(fix: ctx))
     }
 
@@ -190,7 +188,7 @@ struct FixView: View {
 
     var body: some View {
         NavigationStack {
-            EditorView(model: model, batch: nil, accent: accent, showBatch: $showBatch, shareRequest: $shareRequest)
+            EditorView(model: model, batch: nil, showBatch: $showBatch, shareRequest: $shareRequest)
                 .navigationTitle("\(ctx.base) · step \(stepNumber)")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
@@ -211,6 +209,6 @@ struct FixView: View {
                     }
                 }
         }
-        .tint(accent.color)
+        .tint(DS.ink)
     }
 }
