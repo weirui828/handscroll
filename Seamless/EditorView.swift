@@ -114,7 +114,7 @@ struct EditorView: View {
                 // floats over the canvas and the photo keeps the full height.
                 VStack(spacing: 0) {
                     ZStack(alignment: .bottom) {
-                        CanvasView(model: model, onExplain: onExplain)
+                        CanvasView(model: model, onExplain: onExplain, bottomInset: 84)
                         modePicker
                             .padding(6)
                             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
@@ -203,6 +203,9 @@ struct CanvasView: View {
     var inset: CGFloat = 0
     var onExplain: (() -> Void)? = nil
     var showsInfoRow = true
+    /// Room under the photo, so a control floating above it (the mode switch on the
+    /// folded Duo) never sits on the slide grip.
+    var bottomInset: CGFloat = 0
     @AppStorage("seamless.hint.slides") private var slidesHintDone = false
     @AppStorage("seamless.hint.shape") private var shapeHintDone = false
     @State private var hintPulse = false
@@ -340,6 +343,7 @@ struct CanvasView: View {
                 }
             }
             .clipped()
+            .padding(.bottom, bottomInset)
             if showsInfoRow {
                 VStack(spacing: 2) {
                     HStack(spacing: 12) {
