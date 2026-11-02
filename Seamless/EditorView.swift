@@ -91,7 +91,13 @@ struct CanvasView: View {
     @State private var pinchStart: CGFloat?
     @State private var countStart: Int?
     @State private var shapeStart: CGFloat?
-    @State private var showFill = false
+    @State private var showFill: Bool = {
+        #if DEBUG
+        return ProcessInfo.processInfo.arguments.contains("-demoFill")
+        #else
+        return false
+        #endif
+    }()
 
     var body: some View {
         VStack(spacing: 6) {
@@ -228,7 +234,8 @@ struct CanvasView: View {
         .clipped()
         .sheet(isPresented: $showFill) {
             FillSheet(model: model)
-                .presentationDetents([.height(240), .medium])
+                .presentationDetents([.height(190)])
+                .presentationCornerRadius(22)
                 .presentationDragIndicator(.visible)
         }
     }
@@ -447,9 +454,9 @@ private struct FillSheet: View {
     @Bindable var model: EditorModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 14) {
             Text("Empty space")
-                .font(.subheadline.weight(.semibold))
+                .font(.footnote.weight(.semibold))
                 .foregroundStyle(DS.secondary)
 
             Picker("Fill", selection: $model.look.fill) {
@@ -458,13 +465,12 @@ private struct FillSheet: View {
             .pickerStyle(.segmented)
 
             if model.look.fill == .blur {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        Text("Darken").font(.footnote).foregroundStyle(DS.secondary)
-                        Spacer()
-                        Text("\(Int(model.look.dim * 100))%").font(.footnote).foregroundStyle(DS.secondary)
-                    }
+                HStack(spacing: 12) {
+                    Text("Darken").font(.footnote).foregroundStyle(DS.secondary)
                     Slider(value: Binding(get: { Double(model.look.dim) }, set: { model.look.dim = CGFloat($0) }), in: 0...0.7)
+                    Text("\(Int(model.look.dim * 100))%")
+                        .font(.footnote).foregroundStyle(DS.secondary)
+                        .frame(width: 34, alignment: .trailing)
                 }
             }
 
@@ -472,11 +478,11 @@ private struct FillSheet: View {
                 ColorPicker("Color", selection: Binding(
                     get: { Color(UIColor(hex: model.look.colorHex)) },
                     set: { model.look.colorHex = UIColor($0).hexString }))
+                    .font(.footnote)
             }
-
-            Spacer(minLength: 0)
         }
-        .padding(20)
+        .padding(.horizontal, 18).padding(.top, 16)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(DS.bg)
     }
 }
