@@ -13,14 +13,16 @@ private enum Block {
 struct HelpView: View {
     @State var tab: HelpTab
     @Binding var accentHex: String
+    var scrollTarget: String? = nil
     @AppStorage("seamless.hint.slides") private var slidesHintDone = false
     @AppStorage("seamless.hint.shape") private var shapeHintDone = false
     @State private var hintsReset = false
     @Environment(\.dismiss) private var dismiss
 
-    init(startTab: HelpTab, accentHex: Binding<String>) {
+    init(startTab: HelpTab, accentHex: Binding<String>, scrollTarget: String? = nil) {
         _tab = State(initialValue: startTab)
         _accentHex = accentHex
+        self.scrollTarget = scrollTarget
     }
 
     var body: some View {
@@ -39,6 +41,7 @@ struct HelpView: View {
                 }
                 .padding(.horizontal)
                 Divider()
+                ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 12) {
                         if tab == .settings {
@@ -52,6 +55,13 @@ struct HelpView: View {
                     .padding()
                     .frame(maxWidth: 700, alignment: .leading)
                     .frame(maxWidth: .infinity)
+                }
+                .onAppear {
+                    guard let target = scrollTarget else { return }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                        withAnimation { proxy.scrollTo(target, anchor: .top) }
+                    }
+                }
                 }
             }
             .tint(Color(UIColor(hex: accentHex)))
@@ -122,7 +132,7 @@ struct HelpView: View {
     @ViewBuilder
     private func view(_ b: Block) -> some View {
         switch b {
-        case .h(let t): Text(t).font(.headline).padding(.top, 6)
+        case .h(let t): Text(t).font(.headline).padding(.top, 6).id(t)
         case .p(let t): Text(.init(t))
         case .note(let t): Text(.init("**NOTE:** " + t)).padding(10).frame(maxWidth: .infinity, alignment: .leading)
             .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))

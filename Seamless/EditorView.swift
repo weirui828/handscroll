@@ -282,6 +282,18 @@ struct CanvasView: View {
                         }
                         .accessibilityLabel("Frame")
 
+                        if model.tallWarning {
+                            Button { onExplain?() } label: {
+                                Image(systemName: "exclamationmark.circle")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(.orange)
+                                    .frame(width: 24, height: 44)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("3:4 warning")
+                            .accessibilityHint("Opens Help")
+                        }
+
                         if model.leavesGap {
                             Button { showFill = true } label: {
                                 HStack(spacing: 3) {
@@ -295,14 +307,6 @@ struct CanvasView: View {
                             .accessibilityLabel("Fill")
                         }
                     }
-                }
-                if model.tallWarning {
-                    Button { onExplain?() } label: {
-                        Text("Too tall for scheduling tools. Post from the Instagram app.")
-                            .font(.caption).foregroundStyle(.orange).multilineTextAlignment(.center)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityHint("Opens Help")
                 }
             }
             .padding(.horizontal, 12).padding(.bottom, 6)

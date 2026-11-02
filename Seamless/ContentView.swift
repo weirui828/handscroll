@@ -10,6 +10,7 @@ struct ContentView: View {
     @State private var showBatch = false
     @State private var showHelp = false
     @State private var helpTab: HelpTab?
+    @State private var helpScroll: String?
     #if DEBUG
     private var debugSettings: Bool { ProcessInfo.processInfo.arguments.contains("-demoSettings") }
     #else
@@ -27,8 +28,8 @@ struct ContentView: View {
                                showsWordmark: true,
                                pick: $pick,
                                accent: Color(UIColor(hex: accentHex)),
-                               onHelp: { helpTab = nil; showHelp = true },
-                               onExplain: { helpTab = .basics; showHelp = true })
+                               onHelp: { helpTab = nil; helpScroll = nil; showHelp = true },
+                               onExplain: { helpTab = .basics; helpScroll = "The 3:4 warning"; showHelp = true })
                 }
             }
             .navigationTitle("")
@@ -54,6 +55,7 @@ struct ContentView: View {
             if args.contains("-demoSettings") { showHelp = true }
             if args.contains("-demoHelp") { showHelp = true }
             if args.contains("-demoBasics") { helpTab = .basics; showHelp = true }
+            if args.contains("-demoWarning") { editor.setShape(.r34) }
             if args.contains("-demoColor") {
                 editor.look.fill = .color
                 editor.look.colorHex = "#A78BFA"
@@ -70,10 +72,10 @@ struct ContentView: View {
             Task { await editor.load(item); pick = nil }
         }
         .sheet(item: $shareRequest) { request in ShareSheet(items: request.items) }
-        .sheet(isPresented: $showHelp, onDismiss: { helpTab = nil }) {
+        .sheet(isPresented: $showHelp, onDismiss: { helpTab = nil; helpScroll = nil }) {
             HelpView(startTab: helpTab ?? (debugSettings ? .settings
                         : showBatch ? .batch : editor.photo == nil ? .basics : HelpTab(editor.mode)),
-                     accentHex: $accentHex)
+                     accentHex: $accentHex, scrollTarget: helpScroll)
         }
     }
 }
