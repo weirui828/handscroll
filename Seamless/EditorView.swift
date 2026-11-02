@@ -105,6 +105,9 @@ struct EditorView: View {
 struct CanvasView: View {
     @Bindable var model: EditorModel
     var inset: CGFloat = 0
+    @AppStorage("seamless.hint.slides") private var slidesHintDone = false
+    @AppStorage("seamless.hint.shape") private var shapeHintDone = false
+    @State private var hintPulse = false
     @State private var dragStart: Layout?
     @State private var pinchStart: CGFloat?
     @State private var countStart: Int?
@@ -202,6 +205,20 @@ struct CanvasView: View {
                                 .frame(width: w, height: h + 36)
                             }
 
+                            if frame.n > 1, !slidesHintDone {
+                                hintCapsule("Drag for slides", icon: "arrow.left.and.right") {
+                                    slidesHintDone = true
+                                }
+                                .position(x: min(max(w / CGFloat(max(frame.n, 1)), 60), w - 60), y: 30)
+                            }
+                            if !shapeHintDone {
+                                hintCapsule("Drag for shape", icon: "arrow.up.left.and.arrow.down.right") {
+                                    shapeHintDone = true
+                                }
+                                .frame(width: w, height: h, alignment: .bottomTrailing)
+                                .padding(.trailing, 52).padding(.bottom, 46)
+                            }
+
                             // and the bottom-right corner sets the shape
                             cornerHandle(frame: frame, h: h)
                                 .frame(width: w, height: h, alignment: .bottomTrailing)
@@ -296,6 +313,27 @@ struct CanvasView: View {
             .onEnded { _ in dragStart = nil }
     }
 
+    private func hintCapsule(_ text: String, icon: String, dismiss: @escaping () -> Void) -> some View {
+        Button(action: dismiss) {
+            HStack(spacing: 5) {
+                Image(systemName: icon).font(.system(size: 10, weight: .semibold))
+                Text(text).font(.system(size: 11, weight: .semibold))
+            }
+            .foregroundStyle(DS.onInk)
+            .padding(.horizontal, 10).padding(.vertical, 6)
+            .background(DS.ink.opacity(0.82), in: Capsule())
+            .scaleEffect(hintPulse ? 1.06 : 1)
+            .opacity(hintPulse ? 1 : 0.82)
+        }
+        .buttonStyle(.plain)
+        .onAppear {
+            withAnimation(.easeInOut(duration: 1.1).repeatForever(autoreverses: true)) {
+                hintPulse = true
+            }
+        }
+        .accessibilityLabel(text)
+    }
+
     /// A clear band that turns a horizontal drag into +-1 slide, starting from the nearest cut.
     private func dividerBand(w: CGFloat, n: Int) -> some View {
         Color.clear
@@ -304,6 +342,7 @@ struct CanvasView: View {
             .gesture(
                 DragGesture(minimumDistance: 6)
                     .onChanged { value in
+                        slidesHintDone = true
                         if countStart == nil { countStart = n }
                         guard let start = countStart else { return }
                         let steps = Int((value.translation.width / 46).rounded())
@@ -341,6 +380,7 @@ struct CanvasView: View {
         .gesture(
             DragGesture(minimumDistance: 6)
                 .onChanged { value in
+                    shapeHintDone = true
                     if shapeStart == nil { shapeStart = frame.a }
                     guard let start = shapeStart else { return }
                     let taller = start * h / max(60, h + value.translation.height * 1.8)

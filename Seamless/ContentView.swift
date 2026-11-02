@@ -61,6 +61,7 @@ struct ContentView: View {
             if args.contains("-demoBatch") { showBatch = true }
             if args.contains("-demoPlay") { editor.togglePlay() }
             if args.contains("-demoSettings") { showHelp = true }
+            if args.contains("-demoHelp") { showHelp = true }
             if args.contains("-demoColor") {
                 editor.look.fill = .color
                 editor.look.colorHex = "#A78BFA"
