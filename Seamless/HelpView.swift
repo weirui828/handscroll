@@ -13,6 +13,9 @@ private enum Block {
 struct HelpView: View {
     @State var tab: HelpTab
     @Binding var accentHex: String
+    @AppStorage("seamless.hint.slides") private var slidesHintDone = false
+    @AppStorage("seamless.hint.shape") private var shapeHintDone = false
+    @State private var hintsReset = false
     @Environment(\.dismiss) private var dismiss
 
     init(startTab: HelpTab, accentHex: Binding<String>) {
@@ -73,6 +76,30 @@ struct HelpView: View {
                 get: { Color(UIColor(hex: accentHex)) },
                 set: { accentHex = UIColor($0).hexString }))
                 .font(.footnote)
+
+            Divider().overlay(DS.stroke).padding(.vertical, 4)
+
+            Text("Tutorial").font(.headline)
+            Text("The gesture hints show once on a new photo. You can show them again.")
+                .font(.footnote).foregroundStyle(DS.secondary)
+
+            Button {
+                slidesHintDone = false
+                shapeHintDone = false
+                hintsReset = true
+                Task {
+                    try? await Task.sleep(for: .seconds(2))
+                    hintsReset = false
+                }
+            } label: {
+                Text(hintsReset ? "Hints will show again" : "Show the hints again")
+                    .font(.footnote.weight(.medium))
+                    .foregroundStyle(DS.text)
+                    .padding(.horizontal, 14).padding(.vertical, 9)
+                    .background(DS.card, in: RoundedRectangle(cornerRadius: 10))
+                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(DS.stroke, lineWidth: 1))
+            }
+            .buttonStyle(.plain)
         }
     }
 
