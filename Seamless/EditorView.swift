@@ -294,7 +294,8 @@ struct CanvasView: View {
                 p.addLine(to: CGPoint(x: 34, y: 34))
                 p.addLine(to: CGPoint(x: 4, y: 34))
             }
-            .stroke(.white.opacity(0.92), style: StrokeStyle(lineWidth: 2.4, lineCap: .round, lineJoin: .round))
+            .stroke(.white.opacity(0.95), style: StrokeStyle(lineWidth: 2.4, lineCap: .round, lineJoin: .round))
+            .shadow(color: .black.opacity(0.45), radius: 1.6, y: 0.5)
             .frame(width: 38, height: 38)
             .padding(6)
 
