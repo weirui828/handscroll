@@ -67,20 +67,30 @@ struct EditorView: View {
         GeometryReader { geo in
             // a wide, on-purpose window gets two panes; everything else stacks with the
             // header at the top, so the wordmark never floats in the middle of the screen
-            let sideBySide = geo.size.width >= 520 && geo.size.width > geo.size.height * 1.05
+            #if DEBUG
+            let forcePanes = ProcessInfo.processInfo.arguments.contains("-demoPanes")
+            #else
+            let forcePanes = false
+            #endif
+            let sideBySide = (geo.size.width >= 520 && geo.size.width > geo.size.height * 1.05) || forcePanes
             let compact = !sideBySide && geo.size.height < 620
             let controlsWidth = min(400, geo.size.width * 0.42)
 
             let header = VStack(spacing: 0) {
                 if showsWordmark && !compact {
+                    // Unfolded, the two icons stack under the system status column: in the
+                    // landscape camera strip when it exists, otherwise at the top right of
+                    // the header, which then grows to fit them.
                     HStack(spacing: 0) {
                         Text("Seamless")
                             .font(.system(size: 17, weight: .semibold))
                             .tracking(0.3)
                             .foregroundStyle(DS.text)
                         Spacer()
-                        if strip < 1 {
+                        if !hinge.splitAtFold {
                             iconRow
+                        } else if strip < 1 {
+                            stripRail
                         }
                     }
                     .padding(.leading, 12).padding(.trailing, 12).padding(.top, 4)
@@ -147,7 +157,7 @@ struct EditorView: View {
             if strip >= 1 {
                 stripRail
                     .frame(width: strip)
-                    .padding(.top, 112)
+                    .padding(.top, 100)
                     .ignoresSafeArea(edges: [.top, .trailing])
             }
         }
@@ -159,6 +169,7 @@ struct CanvasView: View {
     @Bindable var model: EditorModel
     var inset: CGFloat = 0
     var onExplain: (() -> Void)? = nil
+    var showsInfoRow = true
     @AppStorage("seamless.hint.slides") private var slidesHintDone = false
     @AppStorage("seamless.hint.shape") private var shapeHintDone = false
     @State private var hintPulse = false
@@ -290,69 +301,71 @@ struct CanvasView: View {
                 }
             }
             .clipped()
-            VStack(spacing: 2) {
-                HStack(spacing: 12) {
-                        if model.tallWarning {
-                            Button { onExplain?() } label: {
-                                Image(systemName: "exclamationmark.circle")
-                                    .font(.system(size: 13, weight: .semibold))
-                                    .foregroundStyle(.orange)
-                                    .frame(width: 24, height: 44)
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel("3:4 warning")
-                            .accessibilityHint("Opens Help")
-                        }
-
-                    if model.mode == .reel {
-                        Text(model.sizeText).font(.footnote).foregroundStyle(DS.secondary)
-                    } else {
-                        Menu {
-                            Picker("Size", selection: $model.outW) {
-                                ForEach(model.sizeChoices, id: \.width) { c in
-                                    Text("\(c.width) × \(c.height) px").tag(CGFloat(c.width))
+            if showsInfoRow {
+                VStack(spacing: 2) {
+                    HStack(spacing: 12) {
+                            if model.tallWarning {
+                                Button { onExplain?() } label: {
+                                    Image(systemName: "exclamationmark.circle")
+                                        .font(.system(size: 13, weight: .semibold))
+                                        .foregroundStyle(.orange)
+                                        .frame(width: 24, height: 44)
                                 }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel("3:4 warning")
+                                .accessibilityHint("Opens Help")
                             }
-                        } label: {
-                            HStack(spacing: 3) {
-                                Text(model.sizeText)
-                                Image(systemName: "chevron.up.chevron.down").font(.system(size: 8, weight: .semibold))
-                            }
-                            .font(.footnote)
-                            .foregroundStyle(DS.secondary)
-                        }
-                        .accessibilityLabel("Output size")
 
-                        Menu {
-                            Button("Fit") { model.wholePhoto() }
-                            Button("Fill") { model.fillFrame() }
-                        } label: {
-                            HStack(spacing: 3) {
-                                Text(model.showsWholePhoto ? "Fit" : "Fill")
-                                Image(systemName: "chevron.up.chevron.down").font(.system(size: 8, weight: .semibold))
-                            }
-                            .font(.footnote)
-                            .foregroundStyle(DS.secondary)
-                            .frame(minHeight: 44)
-                        }
-                        .accessibilityLabel("Frame")
-
-                        if model.leavesGap {
-                            Button { showFill = true } label: {
+                        if model.mode == .reel {
+                            Text(model.sizeText).font(.footnote).foregroundStyle(DS.secondary)
+                        } else {
+                            Menu {
+                                Picker("Size", selection: $model.outW) {
+                                    ForEach(model.sizeChoices, id: \.width) { c in
+                                        Text("\(c.width) × \(c.height) px").tag(CGFloat(c.width))
+                                    }
+                                }
+                            } label: {
                                 HStack(spacing: 3) {
-                                    Text(model.look.fill.rawValue)
+                                    Text(model.sizeText)
+                                    Image(systemName: "chevron.up.chevron.down").font(.system(size: 8, weight: .semibold))
+                                }
+                                .font(.footnote)
+                                .foregroundStyle(DS.secondary)
+                            }
+                            .accessibilityLabel("Output size")
+
+                            Menu {
+                                Button("Fit") { model.wholePhoto() }
+                                Button("Fill") { model.fillFrame() }
+                            } label: {
+                                HStack(spacing: 3) {
+                                    Text(model.showsWholePhoto ? "Fit" : "Fill")
                                     Image(systemName: "chevron.up.chevron.down").font(.system(size: 8, weight: .semibold))
                                 }
                                 .font(.footnote)
                                 .foregroundStyle(DS.secondary)
                                 .frame(minHeight: 44)
                             }
-                            .accessibilityLabel("Fill")
+                            .accessibilityLabel("Frame")
+
+                            if model.leavesGap {
+                                Button { showFill = true } label: {
+                                    HStack(spacing: 3) {
+                                        Text(model.look.fill.rawValue)
+                                        Image(systemName: "chevron.up.chevron.down").font(.system(size: 8, weight: .semibold))
+                                    }
+                                    .font(.footnote)
+                                    .foregroundStyle(DS.secondary)
+                                    .frame(minHeight: 44)
+                                }
+                                .accessibilityLabel("Fill")
+                            }
                         }
                     }
                 }
+                .padding(.horizontal, 12).padding(.bottom, 6)
             }
-            .padding(.horizontal, 12).padding(.bottom, 6)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(inset)
@@ -502,14 +515,125 @@ struct Controls: View {
     @Bindable var model: EditorModel
     var compact = false
     var accent: Color = DS.ink
+    /// True in the two-pane layout, where the pane takes the controls the narrow
+    /// layout keeps in the line under the photo.
+    var roomy = false
+    var onExplain: (() -> Void)?
+    @State private var showFillSheet = false
     @ScaledMetric(relativeTo: .body) private var slideWidth = 72.0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             if model.geo != nil, model.mode == .reel { reelControls }
+            if roomy, model.geo != nil, model.mode != .reel {
+                slideGroup
+                photoGroup
+            }
 
             if let s = model.status { Text(s).font(.footnote).foregroundStyle(.secondary) }
         }
+        .sheet(isPresented: $showFillSheet) {
+            FillSheet(model: model)
+                .presentationDetents([.height(190)])
+                .presentationCornerRadius(22)
+                .presentationDragIndicator(.visible)
+        }
+    }
+
+    // MARK: Slide and photo
+
+    @ViewBuilder
+    private var slideGroup: some View {
+        group("Slide") {
+            if model.mode == .carousel {
+                HStack(spacing: 10) {
+                    rowLabel("Slides").frame(width: 58, alignment: .leading)
+                    Picker("Slides", selection: Binding(get: { model.layout.n },
+                                                        set: { model.setCount($0) })) {
+                        ForEach(2...maxSlides, id: \.self) { n in Text("\(n)").tag(n) }
+                    }
+                    .pickerStyle(.segmented)
+                        .accessibilityLabel("Slides")
+                }
+            }
+            HStack(spacing: 10) {
+                rowLabel("Shape").frame(width: 58, alignment: .leading)
+                AdaptivePicker("Shape", selection: Binding(get: { model.layout.shape },
+                                                           set: { model.setShape($0) })) {
+                    ForEach(shapeChoices) { Text($0.rawValue).tag($0) }
+                }
+            }
+            HStack(spacing: 10) {
+                rowLabel("Size").frame(width: 58, alignment: .leading)
+                Spacer(minLength: 0)
+                Menu {
+                    Picker("Size", selection: $model.outW) {
+                        ForEach(model.sizeChoices, id: \.width) { c in
+                            Text("\(c.width) × \(c.height) px").tag(CGFloat(c.width))
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(model.sizeText)
+                        Image(systemName: "chevron.up.chevron.down").font(.system(size: 8, weight: .semibold))
+                    }
+                    .font(.footnote)
+                    .foregroundStyle(DS.secondary)
+                    .frame(minHeight: 32)
+                }
+                .accessibilityLabel("Output size")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var photoGroup: some View {
+        group("Photo") {
+            HStack(spacing: 10) {
+                rowLabel("Frame").frame(width: 58, alignment: .leading)
+                Picker("Frame", selection: Binding(get: { model.showsWholePhoto },
+                                                   set: { whole in whole ? model.wholePhoto() : model.fillFrame() })) {
+                    Text("Fit").tag(true)
+                    Text("Fill").tag(false)
+                }
+                .pickerStyle(.segmented)
+                    .accessibilityLabel("Frame")
+            }
+            if model.leavesGap {
+                HStack(spacing: 10) {
+                    rowLabel("Empty").frame(width: 58, alignment: .leading)
+                    Button { showFillSheet = true } label: {
+                        HStack(spacing: 4) {
+                            Text(model.look.fill.rawValue)
+                            Image(systemName: "chevron.up.chevron.down").font(.system(size: 8, weight: .semibold))
+                        }
+                        .font(.footnote)
+                        .foregroundStyle(DS.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Empty space")
+                    Spacer(minLength: 0)
+                }
+            }
+            if model.tallWarning {
+                Button { onExplain?() } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "exclamationmark.circle.fill")
+                            .foregroundStyle(.orange)
+                        Text("Taller than 3:4 can be cropped on Instagram.")
+                            .font(.footnote)
+                            .foregroundStyle(DS.secondary)
+                            .multilineTextAlignment(.leading)
+                        Spacer(minLength: 0)
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private var shapeChoices: [Shape] {
+        model.mode == .carousel ? [.auto, .r45, .r34, .r11] : [.r45, .r34, .r11]
     }
 
     // MARK: Reel
