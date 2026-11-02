@@ -465,7 +465,9 @@ struct Controls: View {
     // MARK: Export and batch
 
     private func group<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
-        content()
+        VStack(alignment: .leading, spacing: compact ? 6 : 8) {
+            content()
+        }
             .padding(compact ? 10 : 14)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(DS.card, in: RoundedRectangle(cornerRadius: 14))
