@@ -60,7 +60,7 @@ struct InkIconButton: ButtonStyle {
         configuration.label
             .font(.system(size: 20, weight: .semibold))
             .foregroundStyle(DS.onInk)
-            .frame(width: 50, height: 50)
+            .frame(width: 46, height: 46)
             .background(DS.ink.opacity(configuration.isPressed || !enabled ? 0.6 : 1),
                         in: RoundedRectangle(cornerRadius: 14))
     }
