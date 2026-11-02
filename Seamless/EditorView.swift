@@ -16,8 +16,14 @@ struct EditorView: View {
     @State private var controlsHeight: CGFloat = 0
 
     /// The unfolded Duo keeps a strip on the right for the camera and the status items.
+    /// Only a foldable has one: an iPhone in landscape is also inset on the right, but
+    /// that inset is the notch, not a camera rail.
     private var strip: CGFloat {
-        UIApplication.shared.connectedScenes
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-demoStrip") { return 62 }
+        #endif
+        guard hinge.openness != .none else { return 0 }
+        return UIApplication.shared.connectedScenes
             .compactMap { ($0 as? UIWindowScene)?.windows.first?.safeAreaInsets.right }
             .max() ?? 0
     }
@@ -28,23 +34,33 @@ struct EditorView: View {
     var hidesNavigationBar = true
 
     @ViewBuilder
-    private var iconRow: some View {
-        HStack(spacing: 0) {
-            if let pick {
-                PhotosPicker(selection: pick, matching: .images, photoLibrary: .shared()) {
-                    Image(systemName: "photo.badge.plus")
-                }
-                .buttonStyle(QuietBarButton())
-                .accessibilityLabel("New photo")
+    private var iconButtons: some View {
+        if let pick {
+            PhotosPicker(selection: pick, matching: .images, photoLibrary: .shared()) {
+                Image(systemName: "photo.badge.plus")
             }
-            if let onHelp {
-                Button(action: onHelp) {
-                    Image(systemName: "questionmark.circle")
-                }
-                .buttonStyle(QuietBarButton())
-                .accessibilityLabel("Help")
-            }
+            .buttonStyle(QuietBarButton())
+            .accessibilityLabel("New photo")
         }
+        if let onHelp {
+            Button(action: onHelp) {
+                Image(systemName: "questionmark.circle")
+            }
+            .buttonStyle(QuietBarButton())
+            .accessibilityLabel("Help")
+        }
+    }
+
+    @ViewBuilder
+    private var iconRow: some View {
+        HStack(spacing: 0) { iconButtons }
+    }
+
+    /// The camera strip is a narrow column down the right edge. The two icons stack in
+    /// it, under the system status items, instead of running along the top edge.
+    @ViewBuilder
+    private var stripRail: some View {
+        VStack(spacing: 0) { iconButtons }
     }
 
     var body: some View {
@@ -81,7 +97,8 @@ struct EditorView: View {
 
             let controls = VStack(spacing: 0) {
                 ScrollView {
-                    Controls(model: model, compact: compact, accent: accent).padding(12)
+                    Controls(model: model, compact: compact, accent: accent,
+                             roomy: sideBySide, onExplain: onExplain).padding(12)
                 }
                 .scrollBounceBehavior(.basedOnSize)
                 if showsExportBar {
@@ -93,7 +110,8 @@ struct EditorView: View {
 
             if sideBySide {
                 HStack(spacing: 0) {
-                    CanvasView(model: model, inset: 20, onExplain: onExplain)
+                    CanvasView(model: model, inset: 20, onExplain: onExplain,
+                               showsInfoRow: model.mode == .reel)
                     Divider().overlay(DS.stroke)
                     VStack(spacing: 0) { header; controls }
                         .frame(width: controlsWidth)
@@ -127,10 +145,10 @@ struct EditorView: View {
         .background(DS.bg)
         .overlay(alignment: .topTrailing) {
             if strip >= 1 {
-                iconRow
-                    .padding(.trailing, 16)
-                    .padding(.top, 150)
-                    .ignoresSafeArea(edges: .trailing)
+                stripRail
+                    .frame(width: strip)
+                    .padding(.top, 112)
+                    .ignoresSafeArea(edges: [.top, .trailing])
             }
         }
         .toolbar(hidesNavigationBar ? .hidden : .visible, for: .navigationBar)

@@ -80,14 +80,14 @@ struct ContentView: View {
                      accentHex: $accentHex, scrollTarget: helpScroll)
         }
         #if DEBUG
-        .overlay(alignment: .bottomLeading) { if debugMetrics { MetricsView() } }
+        .overlay(alignment: .bottomLeading) { if debugMetrics { MetricsView(hinge: hinge) } }
         #endif
     }
 }
 
 #if DEBUG
 struct MetricsView: View {
-    @Environment(HingeState.self) private var hinge
+    var hinge: HingeState
     var body: some View {
         let scene = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first
         let win = scene?.windows.first
