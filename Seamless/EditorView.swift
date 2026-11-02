@@ -449,9 +449,21 @@ private struct ExportActions: View {
                     } label: {
                         Label("Add to batch", systemImage: "plus.square.on.square")
                             .labelStyle(.iconOnly)
+                            .overlay(alignment: .topTrailing) {
+                                if !batch.steps.isEmpty {
+                                    Text("\(batch.steps.count)")
+                                        .font(.system(size: 9, weight: .bold))
+                                        .foregroundStyle(DS.onInk)
+                                        .frame(minWidth: 15, minHeight: 15)
+                                        .background(DS.ink, in: Circle())
+                                        .offset(x: 3, y: -1)
+                                        .transition(.scale.combined(with: .opacity))
+                                }
+                            }
                     }
                     .buttonStyle(QuietBarButton())
                     .accessibilityLabel("Add to batch")
+                    .accessibilityValue("\(batch.steps.count) steps")
                     .disabled(model.busy || batch.steps.count >= maxSteps)
                 }
 

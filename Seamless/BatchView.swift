@@ -153,23 +153,30 @@ struct BatchView: View {
     private var runSection: some View {
         card("Export") {
             Text(batch.estimateText).font(.footnote).foregroundStyle(DS.secondary)
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 10)], spacing: 10) {
-                Button { Task { await batch.run() } } label: {
-                    Text(batch.progress ?? "Make files").frame(maxWidth: .infinity, minHeight: 24)
-                }
-                .buttonStyle(PrimaryButton())
-                .disabled(!batch.canRun)
+            HStack(spacing: 2) {
+                Spacer(minLength: 8)
                 if !batch.results.isEmpty && !batch.busy {
                     Button { Task {
                         await batch.saveToPhotos()
                         showSaveResult = true
-                    } } label: { Label("Save to Photos", systemImage: "square.and.arrow.down").frame(minHeight: 32) }
-                        .buttonStyle(.bordered)
-                    Button { shareRequest = ShareRequest(items: batch.results) } label: { Label("Share", systemImage: "square.and.arrow.up").frame(minHeight: 32) }
-                        .buttonStyle(.bordered)
+                    } } label: {
+                        Label("Save to Photos", systemImage: "square.and.arrow.down").labelStyle(.iconOnly)
+                    }
+                    .buttonStyle(QuietBarButton())
+                    .accessibilityLabel("Save to Photos")
+                    Button { shareRequest = ShareRequest(items: batch.results) } label: {
+                        Label("Share", systemImage: "square.and.arrow.up").labelStyle(.iconOnly)
+                    }
+                    .buttonStyle(QuietBarButton())
+                    .accessibilityLabel("Share")
                 }
+                Button { Task { await batch.run() } } label: {
+                    Text(batch.progress ?? "Make files")
+                }
+                .buttonStyle(PrimaryButton())
+                .disabled(!batch.canRun)
             }
-            if let s = batch.status { Text(s).font(.footnote).foregroundStyle(.secondary) }
+            if let s = batch.status { Text(s).font(.footnote).foregroundStyle(DS.secondary) }
             Text("Each file name shows the photo, the step and the slide, for example DSC_0420_2-carousel_01.jpg.")
                 .font(.caption).foregroundStyle(DS.secondary)
         }
