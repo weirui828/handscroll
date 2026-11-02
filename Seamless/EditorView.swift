@@ -30,11 +30,6 @@ struct EditorView: View {
                             .tracking(0.3)
                             .foregroundStyle(DS.text)
                         Spacer()
-                        Button { showBatch = true } label: {
-                            Image(systemName: "square.stack.3d.up")
-                        }
-                        .buttonStyle(QuietBarButton())
-                        .accessibilityLabel("Batch")
                         if let onHelp {
                             Button(action: onHelp) {
                                 Image(systemName: "questionmark.circle")
@@ -460,27 +455,30 @@ private struct ExportActions: View {
                 Spacer(minLength: 8)
 
                 if let batch {
-                    Button {
-                        if let step = model.captureStep() { flash(batch.add(step)) }
+                    Menu {
+                        Button {
+                            if let step = model.captureStep() { flash(batch.add(step)) }
+                        } label: {
+                            Label("Add this setting", systemImage: "plus.circle")
+                        }
+                        .disabled(model.busy || batch.steps.count >= maxSteps)
+
+                        Button { showBatch = true } label: {
+                            Label("Open Batch", systemImage: "square.stack.3d.up")
+                        }
                     } label: {
-                        Label("Add to batch", systemImage: "plus.square.on.square")
-                            .labelStyle(.iconOnly)
-                            .overlay(alignment: .topTrailing) {
-                                if !batch.steps.isEmpty {
-                                    Text("\(batch.steps.count)")
-                                        .font(.system(size: 9, weight: .bold))
-                                        .foregroundStyle(DS.onInk)
-                                        .frame(minWidth: 15, minHeight: 15)
-                                        .background(DS.ink, in: Circle())
-                                        .offset(x: 3, y: -1)
-                                        .transition(.scale.combined(with: .opacity))
-                                }
-                            }
+                        HStack(spacing: 4) {
+                            Text(batch.steps.isEmpty ? "Batch" : "Batch · \(batch.steps.count)")
+                                .font(.footnote.weight(.medium))
+                            Image(systemName: "chevron.up.chevron.down")
+                                .font(.system(size: 9, weight: .semibold))
+                        }
+                        .foregroundStyle(DS.secondary)
+                        .frame(height: 44)
+                        .padding(.horizontal, 4)
                     }
-                    .buttonStyle(QuietBarButton())
-                    .accessibilityLabel("Add to batch")
+                    .accessibilityLabel("Batch")
                     .accessibilityValue("\(batch.steps.count) steps")
-                    .disabled(model.busy || batch.steps.count >= maxSteps)
                 }
 
                 Button {
