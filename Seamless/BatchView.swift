@@ -201,7 +201,7 @@ struct FixView: View {
 
     var body: some View {
         NavigationStack {
-            EditorView(model: model, batch: nil, showBatch: $showBatch, shareRequest: $shareRequest)
+            EditorView(model: model, batch: nil, showBatch: $showBatch, shareRequest: $shareRequest, showsWordmark: false)
                 .navigationTitle("\(ctx.base) · step \(stepNumber)")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {

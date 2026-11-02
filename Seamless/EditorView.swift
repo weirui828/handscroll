@@ -8,18 +8,21 @@ struct EditorView: View {
     var batch: BatchModel?              // nil while adjusting one batch photo
     @Binding var showBatch: Bool
     @Binding var shareRequest: ShareRequest?
+    var showsWordmark = true
     @Environment(HingeState.self) private var hinge
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack {
-                Text("Seamless")
-                    .font(.system(size: 17, weight: .semibold))
-                    .tracking(0.3)
-                    .foregroundStyle(DS.text)
-                Spacer()
+            if showsWordmark {
+                HStack {
+                    Text("Seamless")
+                        .font(.system(size: 17, weight: .semibold))
+                        .tracking(0.3)
+                        .foregroundStyle(DS.text)
+                    Spacer()
+                }
+                .padding(.horizontal, 16).padding(.top, 6).padding(.bottom, 2)
             }
-            .padding(.horizontal, 16).padding(.top, 6).padding(.bottom, 2)
 
             Picker("Mode", selection: $model.mode) {
                 ForEach(Mode.allCases) { Text($0.rawValue).tag($0) }
