@@ -248,7 +248,13 @@ struct Controls: View {
     private func imageControls(_ geo: Geometry) -> some View {
         if model.mode == .carousel { countGrid(geo) }
 
-        group("Position", accessory: model.mode == .carousel ? nil : AnyView(shapeMenu(includeAuto: false))) {
+        group("Shape") {
+            AdaptivePicker("Shape", selection: shapeBinding) {
+                ForEach(model.mode == .carousel ? Shape.allCases : Shape.allCases.filter { $0 != .auto }) { Text($0.rawValue).tag($0) }
+            }
+        }
+
+        group("Position") {
             if let f = model.currentFrame {
                 HStack {
                     Text("Zoom")
@@ -288,33 +294,10 @@ struct Controls: View {
         Binding(get: { model.layout.shape }, set: { model.setShape($0) })
     }
 
-    private func shapeMenu(includeAuto: Bool = true) -> some View {
-        Menu {
-            Picker("Shape", selection: shapeBinding) {
-                ForEach(includeAuto ? Shape.allCases : Shape.allCases.filter { $0 != .auto }) { Text($0.rawValue).tag($0) }
-            }
-        } label: {
-            HStack(spacing: 4) {
-                Text(model.layout.shape.rawValue).font(.footnote.weight(.medium))
-                Image(systemName: "chevron.up.chevron.down").font(.system(size: 9, weight: .semibold))
-            }
-            .foregroundStyle(DS.secondary)
-            // a full 44 pt target, so it is easy to hit on purpose and never a near miss
-            .frame(minWidth: 44, minHeight: 44, alignment: .trailing)
-            .contentShape(Rectangle())
-        }
-        .accessibilityLabel("Slide shape")
-        .disabled(model.busy)
-    }
-
     private func countGrid(_ geo: Geometry) -> some View {
         let best = geo.bestN
         return VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("Slides").font(.subheadline.weight(.semibold)).foregroundStyle(DS.secondary)
-                Spacer()
-                shapeMenu()
-            }
+            Text("Slides").font(.subheadline.weight(.semibold)).foregroundStyle(DS.secondary)
             LazyVGrid(columns: [GridItem(.adaptive(minimum: slideWidth), spacing: 8)], spacing: 8) {
                 ForEach(2...maxSlides, id: \.self) { n in
                     Button { model.setCount(n) } label: {
@@ -367,14 +350,9 @@ struct Controls: View {
 
     // MARK: Export and batch
 
-    private func group<Content: View>(_ title: String, accessory: AnyView? = nil,
-                                     @ViewBuilder _ content: () -> Content) -> some View {
+    private func group<Content: View>(_ title: String, @ViewBuilder _ content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(DS.secondary)
-                Spacer()
-                accessory
-            }
+            Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(DS.secondary)
             content()
         }
         .padding(14)
