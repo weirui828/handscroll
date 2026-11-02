@@ -269,23 +269,25 @@ struct CanvasView: View {
     /// The crop-style corner: drag down for a taller slide, up for a wider one.
     private func cornerHandle(frame: Frame, h: CGFloat) -> some View {
         ZStack(alignment: .bottomTrailing) {
-            Color.clear.frame(width: 56, height: 56)
+            Color.clear.frame(width: 64, height: 64)
+
+            // a bigger bracket, so the corner reads as a handle, not as a speck
             Path { p in
-                p.move(to: CGPoint(x: 22, y: 4))
-                p.addLine(to: CGPoint(x: 22, y: 22))
-                p.addLine(to: CGPoint(x: 4, y: 22))
+                p.move(to: CGPoint(x: 34, y: 4))
+                p.addLine(to: CGPoint(x: 34, y: 34))
+                p.addLine(to: CGPoint(x: 4, y: 34))
             }
-            .stroke(.white.opacity(0.9), style: StrokeStyle(lineWidth: 2, lineCap: .round))
-            .frame(width: 26, height: 26)
+            .stroke(.white.opacity(0.92), style: StrokeStyle(lineWidth: 2.4, lineCap: .round, lineJoin: .round))
+            .frame(width: 38, height: 38)
             .padding(6)
 
-            // the ratio sits just outside the corner, quiet but always readable
+            // the ratio sits inside the bracket
             Text(shapeLabel)
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.92))
                 .padding(.horizontal, 5).padding(.vertical, 2)
-                .background(.black.opacity(0.28), in: Capsule())
-                .offset(x: -34, y: -2)
+                .background(.black.opacity(0.26), in: Capsule())
+                .padding(.trailing, 14).padding(.bottom, 12)
         }
         .contentShape(Rectangle())
         .onTapGesture { cycleShape() }
