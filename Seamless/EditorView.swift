@@ -89,6 +89,8 @@ struct CanvasView: View {
     var inset: CGFloat = 0
     @State private var dragStart: Layout?
     @State private var pinchStart: CGFloat?
+    @State private var countStart: Int?
+    @State private var shapeStart: CGFloat?
 
     var body: some View {
         VStack(spacing: 6) {
@@ -133,16 +135,36 @@ struct CanvasView: View {
                             .accessibilityLabel(model.playing ? "Pause" : "Play")
                         }
                         if !isReel {
+                            // the dashed cuts run a little past the photo and end in a grip
                             Canvas { ctx, size in
-                                for i in 1..<max(frame.n, 1) {
-                                    let x = size.width * CGFloat(i) / CGFloat(frame.n)
+                                let n = max(frame.n, 1)
+                                for i in 1..<n {
+                                    let x = size.width * CGFloat(i) / CGFloat(n)
                                     var p = Path()
-                                    p.move(to: CGPoint(x: x, y: 0)); p.addLine(to: CGPoint(x: x, y: size.height))
+                                    p.move(to: CGPoint(x: x, y: 4)); p.addLine(to: CGPoint(x: x, y: size.height - 4))
                                     ctx.stroke(p, with: .color(.white.opacity(0.9)), style: StrokeStyle(lineWidth: 1, dash: [6, 4]))
+                                    for y in [CGFloat(6), size.height - 6] {
+                                        let grip = CGRect(x: x - 8, y: y - 1.5, width: 16, height: 3)
+                                        ctx.fill(Path(roundedRect: grip, cornerRadius: 1.5), with: .color(.white.opacity(0.9)))
+                                    }
                                 }
                             }
-                            .frame(width: w, height: h)
+                            .frame(width: w, height: h + 36)
                             .allowsHitTesting(false)
+
+                            // drag the stubs above or below the photo to change the slide count
+                            if frame.n > 1 {
+                                VStack(spacing: 0) {
+                                    dividerBand(w: w, n: frame.n)
+                                    Spacer(minLength: 0)
+                                    dividerBand(w: w, n: frame.n)
+                                }
+                                .frame(width: w, height: h + 36)
+                            }
+
+                            // and the bottom-right corner sets the shape
+                            cornerHandle(frame: frame, h: h)
+                                .frame(width: w, height: h, alignment: .bottomTrailing)
                         }
                     }
                     .frame(width: geo.size.width, height: geo.size.height)
@@ -199,6 +221,55 @@ struct CanvasView: View {
             .onEnded { _ in dragStart = nil }
     }
 
+    /// A clear band that turns a horizontal drag into +-1 slide, starting from the nearest cut.
+    private func dividerBand(w: CGFloat, n: Int) -> some View {
+        Color.clear
+            .frame(height: 26)
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 6)
+                    .onChanged { value in
+                        if countStart == nil { countStart = n }
+                        guard let start = countStart else { return }
+                        let steps = Int((value.translation.width / 46).rounded())
+                        model.setCount(min(maxSlides, max(2, start + steps)))
+                    }
+                    .onEnded { _ in countStart = nil }
+            )
+    }
+
+    /// The crop-style corner: drag down for a taller slide, up for a wider one.
+    private func cornerHandle(frame: Frame, h: CGFloat) -> some View {
+        ZStack(alignment: .bottomTrailing) {
+            Color.clear.frame(width: 44, height: 44)
+            Path { p in
+                p.move(to: CGPoint(x: 22, y: 4))
+                p.addLine(to: CGPoint(x: 22, y: 22))
+                p.addLine(to: CGPoint(x: 4, y: 22))
+            }
+            .stroke(.white.opacity(0.9), style: StrokeStyle(lineWidth: 2, lineCap: .round))
+            .frame(width: 26, height: 26)
+            .padding(6)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture(count: 2) { if model.mode == .carousel { model.setShape(.auto) } }
+        .gesture(
+            DragGesture(minimumDistance: 6)
+                .onChanged { value in
+                    if shapeStart == nil { shapeStart = frame.a }
+                    guard let start = shapeStart else { return }
+                    let taller = start * h / max(60, h + value.translation.height * 1.8)
+                    let target: Shape
+                    if taller > 0.9 { target = .r11 }
+                    else if taller > 0.775 { target = .r45 }
+                    else { target = .r34 }
+                    model.setShape(target)
+                }
+                .onEnded { _ in shapeStart = nil }
+        )
+        .accessibilityLabel("Slide shape")
+    }
+
     private var pinch: some Gesture {
         MagnifyGesture()
             .onChanged { v in
@@ -246,14 +317,6 @@ struct Controls: View {
 
     @ViewBuilder
     private func imageControls(_ geo: Geometry) -> some View {
-        if model.mode == .carousel { countGrid(geo) }
-
-        group("Shape") {
-            AdaptivePicker("Shape", selection: shapeBinding) {
-                ForEach(model.mode == .carousel ? Shape.allCases : Shape.allCases.filter { $0 != .auto }) { Text($0.rawValue).tag($0) }
-            }
-        }
-
         group("Position") {
             if let f = model.currentFrame {
                 HStack {
@@ -288,40 +351,6 @@ struct Controls: View {
         }
 
 
-    }
-
-    private var shapeBinding: Binding<Shape> {
-        Binding(get: { model.layout.shape }, set: { model.setShape($0) })
-    }
-
-    private func countGrid(_ geo: Geometry) -> some View {
-        let best = geo.bestN
-        return VStack(alignment: .leading, spacing: 8) {
-            Text("Slides").font(.subheadline.weight(.semibold)).foregroundStyle(DS.secondary)
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: slideWidth), spacing: 8)], spacing: 8) {
-                ForEach(2...maxSlides, id: \.self) { n in
-                    Button { model.setCount(n) } label: {
-                        VStack(spacing: 2) {
-                            HStack(spacing: 3) {
-                                Text("\(n)").bold()
-                                if n == best && model.layout.shape == .auto { Circle().fill(DS.secondary).frame(width: 5, height: 5) }
-                            }
-                            Text(geo.chipText(n: n, shape: model.layout.shape)).font(.caption2)
-                        }
-                        .frame(maxWidth: .infinity, minHeight: 44)
-                    }
-                    .buttonStyle(.bordered)
-                    .tint(model.layout.n == n ? DS.ink : .gray)
-                    .accessibilityLabel("\(n) slides")
-                    .accessibilityValue(geo.chipText(n: n, shape: model.layout.shape))
-                    .accessibilityAddTraits(model.layout.n == n ? .isSelected : [])
-                }
-            }
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(DS.card, in: RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(DS.stroke, lineWidth: 1))
     }
 
     // MARK: Reel

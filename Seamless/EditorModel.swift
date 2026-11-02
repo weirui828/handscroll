@@ -221,7 +221,8 @@ final class EditorModel {
         guard let geo, photo != nil else { return "" }
         if mode == .reel { return "\(Int(reelSize.width)) × \(Int(reelSize.height)) px · \(reelFPS) fps" }
         let f = geo.frame(layout, outW: outW)
-        return "\(Int(f.pw)) × \(Int(f.ph)) px"
+        let count = f.n > 1 ? "\(f.n) slides · " : ""
+        return count + "\(Int(f.pw)) × \(Int(f.ph)) px"
     }
 
     /// Instagram's app accepts down to 3:4; schedulers stop at 4:5.
