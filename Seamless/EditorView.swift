@@ -36,22 +36,24 @@ struct EditorView: View {
                             .tracking(0.3)
                             .foregroundStyle(DS.text)
                         Spacer()
-                        if let pick {
-                            PhotosPicker(selection: pick, matching: .images, photoLibrary: .shared()) {
-                                Image(systemName: "photo.badge.plus")
+                        HStack(spacing: 0) {
+                            if let pick {
+                                PhotosPicker(selection: pick, matching: .images, photoLibrary: .shared()) {
+                                    Image(systemName: "photo.badge.plus")
+                                }
+                                .buttonStyle(QuietBarButton())
+                                .accessibilityLabel("New photo")
                             }
-                            .buttonStyle(QuietBarButton())
-                            .accessibilityLabel("New photo")
-                        }
-                        if let onHelp {
-                            Button(action: onHelp) {
-                                Image(systemName: "questionmark.circle")
+                            if let onHelp {
+                                Button(action: onHelp) {
+                                    Image(systemName: "questionmark.circle")
+                                }
+                                .buttonStyle(QuietBarButton())
+                                .accessibilityLabel("Help")
                             }
-                            .buttonStyle(QuietBarButton())
-                            .accessibilityLabel("Help")
                         }
                     }
-                    .padding(.horizontal, 12).padding(.top, 4)
+                    .padding(.leading, 12).padding(.trailing, 12).padding(.top, 4)
                 }
                 Picker("Mode", selection: $model.mode) {
                     ForEach(Mode.allCases) { Text($0.rawValue).tag($0) }
