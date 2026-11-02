@@ -5,7 +5,7 @@ struct ContentView: View {
     @State private var editor = EditorModel()
     @State private var batch = BatchModel()
     @State private var hinge = HingeState()
-    @AppStorage("seamless.accent") private var accentHex = "#111317"
+    @AppStorage("seamless.accent.v2") private var accentHex = "#111317"
     @State private var pick: PhotosPickerItem?
     @State private var showBatch = false
     @State private var showHelp = false
@@ -61,7 +61,6 @@ struct ContentView: View {
             if args.contains("-demoBatch") { showBatch = true }
             if args.contains("-demoPlay") { editor.togglePlay() }
             if args.contains("-demoSettings") { showHelp = true }
-            if args.contains("-demoAccent") { accentHex = "#A78BFA" }
             if args.contains("-demoColor") {
                 editor.look.fill = .color
                 editor.look.colorHex = "#A78BFA"

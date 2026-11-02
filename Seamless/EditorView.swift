@@ -526,7 +526,7 @@ struct RangeSlider: View {
     var accent: Color = DS.ink
     var onEdit: (() -> Void)?
 
-    private let knobWidth: CGFloat = 30
+    private let knobWidth: CGFloat = 28
     private let knobHeight: CGFloat = 28
 
     var body: some View {
@@ -564,9 +564,9 @@ struct RangeSlider: View {
     /// As close to the system thumb as a custom control gets: the same proportion,
     /// a glassy fill and the same soft shadow. The start one carries an accent dot.
     private func knobView(isStart: Bool) -> some View {
-        Capsule()
+        Circle()
             .fill(.white.opacity(0.86))
-            .background(.ultraThinMaterial, in: Capsule())
+            .background(.ultraThinMaterial, in: Circle())
             .frame(width: knobWidth, height: knobHeight)
             .shadow(color: .black.opacity(0.16), radius: 5, y: 1.5)
             .overlay {
