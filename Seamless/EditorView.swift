@@ -89,6 +89,18 @@ struct CanvasView: View {
                     let w = aw * fit, h = ah * fit
                     ZStack {
                         Image(uiImage: img).resizable().frame(width: w, height: h)
+                        if isReel {
+                            Button { model.togglePlay() } label: {
+                                Image(systemName: model.playing ? "pause.fill" : "play.fill")
+                                    .font(.system(size: 24, weight: .semibold))
+                                    .foregroundStyle(.white.opacity(0.92))
+                                    .frame(width: 62, height: 62)
+                                    .background(.black.opacity(0.18), in: Circle())
+                                    .overlay(Circle().stroke(.white.opacity(0.22), lineWidth: 1))
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(model.playing ? "Pause" : "Play")
+                        }
                         if !isReel {
                             Canvas { ctx, size in
                                 for i in 1..<max(frame.n, 1) {
@@ -292,13 +304,7 @@ struct Controls: View {
     @ViewBuilder
     private var reelControls: some View {
         group("Preview") {
-            HStack {
-                Button { model.togglePlay() } label: {
-                    Label(model.playing ? "Pause" : "Play", systemImage: model.playing ? "pause.fill" : "play.fill")
-                }
-                .buttonStyle(.bordered)
-                Slider(value: Binding(get: { model.reelT }, set: { model.stopReel(); model.reelT = $0 }), in: 0...model.reel.dur)
-            }
+            Slider(value: Binding(get: { model.reelT }, set: { model.stopReel(); model.reelT = $0 }), in: 0...model.reel.dur)
         }
         group("Pan") {
             LabeledSlider(title: "Start", value: $model.reel.p0, range: 0...1) { "\(Int($0 * 100))%" }
