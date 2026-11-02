@@ -13,8 +13,10 @@ struct ContentView: View {
     @State private var helpScroll: String?
     #if DEBUG
     private var debugSettings: Bool { ProcessInfo.processInfo.arguments.contains("-demoSettings") }
+    private var debugMetrics: Bool { ProcessInfo.processInfo.arguments.contains("-demoMetrics") }
     #else
     private var debugSettings: Bool { false }
+    private var debugMetrics: Bool { false }
     #endif
     @State private var shareRequest: ShareRequest?
     var body: some View {
@@ -77,8 +79,42 @@ struct ContentView: View {
                         : showBatch ? .batch : editor.photo == nil ? .basics : HelpTab(editor.mode)),
                      accentHex: $accentHex, scrollTarget: helpScroll)
         }
+        #if DEBUG
+        .overlay(alignment: .bottomLeading) { if debugMetrics { MetricsView() } }
+        #endif
     }
 }
+
+#if DEBUG
+struct MetricsView: View {
+    @Environment(HingeState.self) private var hinge
+    var body: some View {
+        let scene = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first
+        let win = scene?.windows.first
+        let ins = win?.safeAreaInsets ?? .zero
+        let sb = scene?.statusBarManager?.statusBarFrame ?? .zero
+        let b = win?.bounds ?? .zero
+        VStack(alignment: .leading, spacing: 1) {
+            Text("win \(Int(b.width))×\(Int(b.height))")
+            Text("safe t\(Int(ins.top)) r\(Int(ins.right)) b\(Int(ins.bottom)) l\(Int(ins.left))")
+            Text("sb x\(Int(sb.minX)) y\(Int(sb.minY)) \(Int(sb.width))×\(Int(sb.height))")
+            Text("hinge \(hingeName)")
+        }
+        .font(.system(size: 9, weight: .bold, design: .monospaced))
+        .foregroundStyle(.black)
+        .padding(4)
+        .background(.yellow.opacity(0.9))
+    }
+    private var hingeName: String {
+        switch hinge.openness {
+        case .none: return "none"
+        case .closed: return "closed"
+        case .partial: return "partial"
+        case .open: return "open"
+        }
+    }
+}
+#endif
 
 struct StartView: View {
     @Binding var pick: PhotosPickerItem?
