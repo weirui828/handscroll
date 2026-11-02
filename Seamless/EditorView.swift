@@ -9,6 +9,7 @@ struct EditorView: View {
     @Binding var showBatch: Bool
     @Binding var shareRequest: ShareRequest?
     var showsWordmark = true
+    var accent: Color = DS.ink
     @Environment(HingeState.self) private var hinge
     @State private var controlsHeight: CGFloat = 0
 
@@ -53,7 +54,7 @@ struct EditorView: View {
 
             let controls = VStack(spacing: 0) {
                 ScrollView {
-                    Controls(model: model, compact: compact).padding(12)
+                    Controls(model: model, compact: compact, accent: accent).padding(12)
                 }
                 .scrollBounceBehavior(.basedOnSize)
                 if showsExportBar {
@@ -79,7 +80,7 @@ struct EditorView: View {
                         .frame(maxHeight: .infinity)
                     Divider().overlay(DS.stroke)
                     ScrollView {
-                        Controls(model: model, compact: compact)
+                        Controls(model: model, compact: compact, accent: accent)
                             .padding(12)
                             .background(GeometryReader { proxy in
                                 Color.clear.preference(key: ControlsHeightKey.self, value: proxy.size.height)
@@ -369,6 +370,7 @@ struct LabeledSlider: View {
 struct Controls: View {
     @Bindable var model: EditorModel
     var compact = false
+    var accent: Color = DS.ink
     @ScaledMetric(relativeTo: .body) private var slideWidth = 72.0
 
     var body: some View {
@@ -416,7 +418,7 @@ struct Controls: View {
         group("Reel") {
             HStack(spacing: 10) {
                 rowLabel("Pan").frame(width: 58, alignment: .leading)
-                RangeSlider(lower: $model.reel.p0, upper: $model.reel.p1)
+                RangeSlider(lower: $model.reel.p0, upper: $model.reel.p1, accent: accent)
                     .frame(height: 34)
             }
 
@@ -434,7 +436,6 @@ struct Controls: View {
 
             Toggle("Ease in and out", isOn: $model.reel.ease)
                 .font(.footnote)
-                .tint(DS.ink)
         }
     }
 
@@ -521,6 +522,7 @@ struct RangeSlider: View {
     @Binding var lower: Double
     @Binding var upper: Double
     var range: ClosedRange<Double> = 0...1
+    var accent: Color = DS.ink
     var onEdit: (() -> Void)?
 
     private let knob: CGFloat = 28
@@ -538,7 +540,7 @@ struct RangeSlider: View {
                 Capsule().fill(DS.stroke)
                     .frame(height: 4)
                     .padding(.horizontal, knob / 2)
-                Capsule().fill(DS.ink)
+                Capsule().fill(accent)
                     .frame(width: hi - lo, height: 4)
                     .offset(x: lo + knob / 2)
 
@@ -559,7 +561,7 @@ struct RangeSlider: View {
 
     private func knobView(filled: Bool) -> some View {
         Circle()
-            .fill(filled ? DS.ink : DS.card)
+            .fill(filled ? accent : DS.card)
             .frame(width: knob, height: knob)
             .shadow(color: .black.opacity(filled ? 0.18 : 0.12), radius: 3, y: 1)
             .overlay(Circle().stroke(DS.stroke, lineWidth: filled ? 0 : 1))

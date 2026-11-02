@@ -22,7 +22,9 @@ struct ContentView: View {
                     StartView(pick: $pick, status: editor.status)
                 } else {
                     EditorView(model: editor, batch: batch, showBatch: $showBatch,
-                               shareRequest: $shareRequest, onHelp: { showHelp = true })
+                               shareRequest: $shareRequest, showsWordmark: true,
+                               accent: Color(UIColor(hex: accentHex)),
+                               onHelp: { showHelp = true })
                 }
             }
             .navigationTitle("")
