@@ -72,9 +72,8 @@ struct EditorView: View {
             } else {
                 VStack(spacing: 0) {
                     header
-                    let aspect = model.mode == .reel ? reelSize.height / reelSize.width
-                        : max(0.25, (model.currentFrame?.a ?? 1.5))
-                    let ideal = geo.size.width / aspect + 54
+                    let aspect = model.mode == .reel ? reelSize.height / reelSize.width : model.photoAspect
+                    let ideal = geo.size.width / max(0.25, aspect) + 54
                     CanvasView(model: model)
                         .frame(height: max(180, min(ideal, geo.size.height - 320)))
                     Divider().overlay(DS.stroke)

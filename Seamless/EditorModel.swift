@@ -208,6 +208,12 @@ final class EditorModel {
         return "\(count)\(ratioLabel(f.a)) · \(Int(f.pw)) × \(Int(f.ph)) px · \(share)% of the photo shows"
     }
 
+    /// The photo's own aspect, which is what the canvas actually shows.
+    var photoAspect: CGFloat {
+        guard let photo, photo.size.height > 0 else { return 1.5 }
+        return photo.size.width / photo.size.height
+    }
+
     /// The output sizes on offer, with the height that the current shape gives them.
     var sizeChoices: [(width: Int, height: Int)] {
         guard let geo, photo != nil, mode != .reel else { return [] }
