@@ -126,6 +126,19 @@ struct CanvasView: View {
                 }
             }
             .clipped()
+            if model.mode == .reel {
+                GeometryReader { bar in
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(DS.stroke)
+                        Capsule().fill(DS.secondary)
+                            .frame(width: bar.size.width * (model.reel.dur > 0 ? min(1, model.reelT / model.reel.dur) : 0))
+                    }
+                }
+                .frame(height: 2)
+                .padding(.horizontal, 24)
+                .padding(.top, 6)
+                .allowsHitTesting(false)
+            }
             VStack(spacing: 2) {
                 Text(model.sizeText).font(.footnote).foregroundStyle(DS.secondary).multilineTextAlignment(.center)
                 if model.tallWarning {
@@ -303,9 +316,6 @@ struct Controls: View {
 
     @ViewBuilder
     private var reelControls: some View {
-        group("Preview") {
-            Slider(value: Binding(get: { model.reelT }, set: { model.stopReel(); model.reelT = $0 }), in: 0...model.reel.dur)
-        }
         group("Pan") {
             LabeledSlider(title: "Start", value: $model.reel.p0, range: 0...1) { "\(Int($0 * 100))%" }
             LabeledSlider(title: "End", value: $model.reel.p1, range: 0...1) { "\(Int($0 * 100))%" }
