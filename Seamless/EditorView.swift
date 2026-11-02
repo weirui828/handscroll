@@ -544,13 +544,13 @@ struct RangeSlider: View {
                     .frame(width: hi - lo, height: 4)
                     .offset(x: lo + knob / 2)
 
-                knobView(filled: true)
+                knobView(isStart: true)
                     .offset(x: lx)
                     .gesture(drag(width: usable, isLower: true))
                     .accessibilityLabel("Start")
                     .accessibilityValue("\(Int(lower * 100)) percent")
 
-                knobView(filled: false)
+                knobView(isStart: false)
                     .offset(x: ux)
                     .gesture(drag(width: usable, isLower: false))
                     .accessibilityLabel("End")
@@ -559,12 +559,18 @@ struct RangeSlider: View {
         }
     }
 
-    private func knobView(filled: Bool) -> some View {
+    /// The same white knob as a native slider; the start one carries a small accent dot.
+    private func knobView(isStart: Bool) -> some View {
         Circle()
-            .fill(filled ? accent : DS.card)
+            .fill(DS.card)
             .frame(width: knob, height: knob)
-            .shadow(color: .black.opacity(filled ? 0.18 : 0.12), radius: 3, y: 1)
-            .overlay(Circle().stroke(DS.stroke, lineWidth: filled ? 0 : 1))
+            .shadow(color: .black.opacity(0.12), radius: 3, y: 1)
+            .overlay(Circle().stroke(DS.stroke, lineWidth: 1))
+            .overlay {
+                if isStart {
+                    Circle().fill(accent).frame(width: 8, height: 8)
+                }
+            }
     }
 
     private func drag(width: CGFloat, isLower: Bool) -> some Gesture {
