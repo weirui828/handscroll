@@ -319,7 +319,11 @@ struct Controls: View {
         group("Pan") {
             LabeledSlider(title: "Start", value: $model.reel.p0, range: 0...1) { "\(Int($0 * 100))%" }
             LabeledSlider(title: "End", value: $model.reel.p1, range: 0...1) { "\(Int($0 * 100))%" }
-            LabeledSlider(title: "Up/down", value: $model.reel.v, range: 0...1) { "\(Int($0 * 100))%" }
+        }
+        group("Frame") {
+            LabeledSlider(title: "Vertical", value: $model.reel.v, range: 0...1) {
+                $0 < 0.34 ? "top" : $0 > 0.66 ? "bottom" : "middle"
+            }
         }
         group("Zoom") {
             LabeledSlider(title: "Start", value: $model.reel.z0, range: 1...1.6) { "\(Int(($0 * 100).rounded()))%" }
