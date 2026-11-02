@@ -150,14 +150,16 @@ struct EditorView: View {
         }
         .toolbar {
             ToolbarItemGroup(placement: .bottomBar) {
-                if let pick {
-                    PhotosPicker(selection: pick, matching: .images, photoLibrary: .shared()) {
-                        Label("New photo", systemImage: "photo.badge.plus")
-                    }
-                }
+                // Help leads: the system puts the first item at the top of a
+                // vertical bar, and at the leading edge of a horizontal one.
                 if let onHelp {
                     Button(action: onHelp) {
                         Label("Help", systemImage: "questionmark.circle")
+                    }
+                }
+                if let pick {
+                    PhotosPicker(selection: pick, matching: .images, photoLibrary: .shared()) {
+                        Label("New photo", systemImage: "photo.badge.plus")
                     }
                 }
                 if let batch {
