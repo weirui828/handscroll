@@ -171,6 +171,7 @@ struct EditorView: View {
                     Button { showBatch = true } label: {
                         Label(batch.steps.isEmpty ? "Batch" : "Batch, \(batch.steps.count) steps",
                               systemImage: "rectangle.stack")
+                            .symbolEffect(.bounce, value: batch.steps.count)
                     }
                     .accessibilityValue("\(batch.steps.count) steps")
                 }
