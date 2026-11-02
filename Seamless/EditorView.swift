@@ -525,7 +525,7 @@ struct RangeSlider: View {
     var accent: Color = DS.ink
     var onEdit: (() -> Void)?
 
-    private let knobWidth: CGFloat = 18
+    private let knobWidth: CGFloat = 24
     private let knobHeight: CGFloat = 28
 
     var body: some View {
