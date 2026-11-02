@@ -184,7 +184,7 @@ struct HelpView: View {
             .ol(["Find the dashed line that runs past the top and the bottom of the photo.",
                  "Drag the small handle at the end of that line to the right to add a slide.",
                  "Drag it to the left to remove a slide. You can have 2 to 5 slides."]),
-            .p("The line below the photo shows the number of slides and the size of each slide."),
+            .p("The line below the photo shows the size of each slide."),
             .img("help-carousel"),
             .p("For move, zoom, shape, the fill and export, see **Basics**."),
             .p("On Instagram, post the slides as one carousel, in order."),
