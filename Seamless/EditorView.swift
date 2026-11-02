@@ -390,31 +390,71 @@ struct Controls: View {
 
     @ViewBuilder
     private var reelControls: some View {
-        group("Pan", trailing: AnyView(
-            Toggle("Reverse", isOn: Binding(get: { model.reel.p1 < model.reel.p0 },
-                                           set: { reversePan(model, $0) }))
-                .labelsHidden()
-                .toggleStyle(.switch)
-                .controlSize(.mini)
-                .accessibilityLabel("Reverse")
-        )) {
-            RangeSlider(lower: $model.reel.p0, upper: $model.reel.p1)
-                .frame(height: 36)
-        }
-        group("Frame") {
-            LabeledSlider(title: "Vertical", value: $model.reel.v, range: 0...1) {
-                $0 < 0.34 ? "top" : $0 > 0.66 ? "bottom" : "middle"
+        group("Reel") {
+            HStack {
+                rowLabel("Pan")
+                Spacer()
+                Toggle("Reverse", isOn: Binding(get: { model.reel.p1 < model.reel.p0 },
+                                               set: { reversePan(model, $0) }))
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                    .controlSize(.mini)
+                    .accessibilityLabel("Reverse")
             }
-        }
-        group("Zoom") {
-            LabeledSlider(title: "Start", value: $model.reel.z0, range: 1...1.6) { "\(Int(($0 * 100).rounded()))%" }
-            LabeledSlider(title: "End", value: $model.reel.z1, range: 1...1.6) { "\(Int(($0 * 100).rounded()))%" }
-        }
-        group("Timing") {
-            LabeledSlider(title: "Length", value: Binding(get: { model.reel.dur }, set: { model.reel.dur = $0.rounded(); model.reelT = min(model.reelT, model.reel.dur) }),
-                          range: 3...30) { "\(Int($0)) s" }
+            RangeSlider(lower: $model.reel.p0, upper: $model.reel.p1)
+                .frame(height: 34)
+
+            rowDivider
+
+            HStack {
+                rowLabel("Vertical")
+                Spacer()
+                rowValue(verticalLabel)
+            }
+            Slider(value: $model.reel.v, in: 0...1)
+
+            rowDivider
+
+            HStack {
+                rowLabel("Zoom to")
+                Spacer()
+                rowValue("\(Int((model.reel.z1 * 100).rounded()))%")
+            }
+            Slider(value: Binding(get: { model.reel.z1 },
+                                  set: { model.reel.z1 = $0; model.reel.z0 = 1 }), in: 1...1.6)
+
+            rowDivider
+
+            HStack {
+                rowLabel("Length")
+                Spacer()
+                rowValue("\(Int(model.reel.dur)) s")
+            }
+            Slider(value: Binding(get: { model.reel.dur },
+                                  set: { model.reel.dur = $0.rounded(); model.reelT = min(model.reelT, model.reel.dur) }),
+                   in: 3...30)
+
             Toggle("Ease in and out", isOn: $model.reel.ease)
+                .font(.footnote)
+                .tint(DS.ink)
         }
+    }
+
+    private var verticalLabel: String {
+        let v = model.reel.v
+        return v < 0.34 ? "top" : v > 0.66 ? "bottom" : "middle"
+    }
+
+    private func rowLabel(_ text: String) -> some View {
+        Text(text).font(.footnote).foregroundStyle(DS.secondary)
+    }
+
+    private func rowValue(_ text: String) -> some View {
+        Text(text).font(.footnote).foregroundStyle(DS.secondary).monospacedDigit()
+    }
+
+    private var rowDivider: some View {
+        Rectangle().fill(DS.stroke).frame(height: 1).padding(.vertical, 2)
     }
 
     // MARK: Export and batch
