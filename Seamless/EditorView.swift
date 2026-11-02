@@ -444,9 +444,7 @@ struct Controls: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if let geo = model.geo {
-                if model.mode == .reel { reelControls }
-            }
+            if model.geo != nil, model.mode == .reel { reelControls }
 
             if let s = model.status { Text(s).font(.footnote).foregroundStyle(.secondary) }
         }
