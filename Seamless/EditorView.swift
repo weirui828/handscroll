@@ -582,26 +582,23 @@ struct Controls: View {
     private var slideGroup: some View {
         group {
             if model.mode == .carousel {
-                HStack(spacing: 10) {
-                    rowLabel("Slides").frame(width: 58, alignment: .leading)
+                controlRow("Slides") {
                     Picker("Slides", selection: Binding(get: { model.layout.n },
                                                         set: { model.setCount($0) })) {
                         ForEach(2...maxSlides, id: \.self) { n in Text("\(n)").tag(n) }
                     }
                     .pickerStyle(.segmented)
-                        .accessibilityLabel("Slides")
+                    .fixedSize(horizontal: true, vertical: false)
+                    .accessibilityLabel("Slides")
                 }
             }
-            HStack(spacing: 10) {
-                rowLabel("Shape").frame(width: 58, alignment: .leading)
+            controlRow("Shape") {
                 AdaptivePicker("Shape", selection: Binding(get: { model.layout.shape },
                                                            set: { model.setShape($0) })) {
                     ForEach(shapeChoices) { Text($0.rawValue).tag($0) }
                 }
             }
-            HStack(spacing: 10) {
-                rowLabel("Size").frame(width: 58, alignment: .leading)
-                Spacer(minLength: 0)
+            controlRow("Size") {
                 Menu {
                     Picker("Size", selection: $model.outW) {
                         ForEach(model.sizeChoices, id: \.width) { c in
@@ -619,19 +616,18 @@ struct Controls: View {
                 }
                 .accessibilityLabel("Output size")
             }
-            HStack(spacing: 10) {
-                rowLabel("Frame").frame(width: 58, alignment: .leading)
+            controlRow("Frame") {
                 Picker("Frame", selection: Binding(get: { model.showsWholePhoto },
                                                    set: { whole in whole ? model.wholePhoto() : model.fillFrame() })) {
                     Text("Fit").tag(true)
                     Text("Fill").tag(false)
                 }
                 .pickerStyle(.segmented)
-                    .accessibilityLabel("Frame")
+                .fixedSize(horizontal: true, vertical: false)
+                .accessibilityLabel("Frame")
             }
             if model.leavesGap {
-                HStack(spacing: 10) {
-                    rowLabel("Empty").frame(width: 58, alignment: .leading)
+                controlRow("Empty") {
                     Button { showFillSheet = true } label: {
                         HStack(spacing: 4) {
                             Text(model.look.fill.rawValue)
@@ -642,7 +638,6 @@ struct Controls: View {
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Empty space")
-                    Spacer(minLength: 0)
                 }
             }
             if model.tallWarning {
@@ -706,6 +701,16 @@ struct Controls: View {
         Text(text).font(.footnote).foregroundStyle(DS.secondary)
     }
 
+    /// Label, then the control, all flush left: the controls line up on one edge.
+    private func controlRow<Content: View>(_ label: String,
+                                           @ViewBuilder _ control: () -> Content) -> some View {
+        HStack(spacing: 10) {
+            rowLabel(label).frame(width: 58, alignment: .leading)
+            control()
+            Spacer(minLength: 0)
+        }
+    }
+
     private func rowValue(_ text: String) -> some View {
         Text(text).font(.footnote).foregroundStyle(DS.secondary).monospacedDigit()
     }
@@ -748,7 +753,7 @@ struct AdaptivePicker<Selection: Hashable, Choices: View>: View {
                 .pickerStyle(.menu)
                 .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
