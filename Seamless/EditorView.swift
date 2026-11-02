@@ -63,7 +63,7 @@ struct EditorView: View {
 
             if sideBySide {
                 HStack(spacing: 0) {
-                    CanvasView(model: model)
+                    CanvasView(model: model, inset: 20)
                     Divider().overlay(DS.stroke)
                     VStack(spacing: 0) { header; controls }
                         .frame(width: controlsWidth)
@@ -86,6 +86,7 @@ struct EditorView: View {
 
 struct CanvasView: View {
     @Bindable var model: EditorModel
+    var inset: CGFloat = 0
     @State private var dragStart: Layout?
     @State private var pinchStart: CGFloat?
 
@@ -184,6 +185,7 @@ struct CanvasView: View {
             .padding(.horizontal, 12).padding(.bottom, 6)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(inset)
         .background(DS.bg)
         .clipped()
     }
