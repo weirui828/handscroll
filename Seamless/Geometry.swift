@@ -14,6 +14,12 @@ let maxSlides = 5     // the slide chips only offer 2...5; fewer slides read bet
 let reelSize = CGSize(width: 1080, height: 1920)
 let reelFPS = 30
 
+/// A window that should split into two panes: wide enough for both, and clearly
+/// wider than tall so the split runs down the long edge.
+func fitsTwoPanes(width: CGFloat, height: CGFloat, minWidth: CGFloat = 520) -> Bool {
+    width >= minWidth && width > height * 1.05
+}
+
 enum Mode: String, CaseIterable, Identifiable, Codable {
     case carousel = "Carousel", fit = "Fit", crop = "Crop", reel = "Reel"
     var id: String { rawValue }
@@ -196,19 +202,6 @@ struct Geometry {
             if shown > bestShown + 1e-9 { best = n; bestShown = shown }
         }
         return best
-    }
-
-    /// Text under each count chip: the slide shape, or the share of the photo that stays.
-    func chipText(n: Int, shape: Shape) -> String {
-        let R = W / H
-        if let a = shape.aspect {
-            let F = CGFloat(n) * a
-            return "\(Int((min(F, R) / max(F, R) * 100).rounded()))%"
-        }
-        let a = R / CGFloat(n)
-        if a < minAspect { return "\(Int((a / minAspect * 100).rounded()))%" }
-        if a > maxAspect { return "\(Int((maxAspect / a * 100).rounded()))%" }
-        return ratioLabel(a)
     }
 
     /// The layout a step gives this photo.

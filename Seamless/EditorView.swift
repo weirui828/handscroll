@@ -1,9 +1,9 @@
 import SwiftUI
 import PhotosUI
 
-/// The canvas and the controls sit in two separate panes. When the window is wide
-/// (iPad, landscape, or an unfolded screen) the panes sit side by side, so a fold
-/// falls between them and never across the canvas. When it is narrow they stack.
+/// The canvas and the controls sit in two separate panes. A wide, clearly landscape
+/// window puts them side by side; anything narrower stacks the canvas above the
+/// controls, so the photo never has to share a row with the inspector.
 struct EditorView: View {
     @Bindable var model: EditorModel
     var batch: BatchModel?              // nil while adjusting one batch photo
@@ -71,9 +71,7 @@ struct EditorView: View {
 
     var body: some View {
         GeometryReader { geo in
-            let sideBySide = !onOuterDisplay
-                && geo.size.width >= 520
-                && geo.size.width > geo.size.height * 1.05
+            let sideBySide = !onOuterDisplay && fitsTwoPanes(width: geo.size.width, height: geo.size.height)
             let compact = !sideBySide && geo.size.height < 620
             let controlsWidth = min(400, geo.size.width * 0.42)
 
@@ -210,13 +208,6 @@ struct CanvasView: View {
     @State private var pinchStart: CGFloat?
     @State private var countStart: Int?
     @State private var shapeStart: CGFloat?
-    @State private var showFill: Bool = {
-        #if DEBUG
-        return ProcessInfo.processInfo.arguments.contains("-demoFill")
-        #else
-        return false
-        #endif
-    }()
 
     var body: some View {
         VStack(spacing: 6) {
@@ -361,47 +352,10 @@ struct CanvasView: View {
                         if model.mode == .reel {
                             Text(model.sizeText).font(.footnote).foregroundStyle(DS.secondary)
                         } else {
-                            Menu {
-                                Picker("Size", selection: $model.outW) {
-                                    ForEach(model.sizeChoices, id: \.width) { c in
-                                        Text("\(c.width) × \(c.height) px").tag(CGFloat(c.width))
-                                    }
-                                }
-                            } label: {
-                                HStack(spacing: 3) {
-                                    Text(model.sizeText)
-                                    Image(systemName: "chevron.up.chevron.down").font(.system(size: 8, weight: .semibold))
-                                }
-                                .font(.footnote)
-                                .foregroundStyle(DS.secondary)
-                            }
-                            .accessibilityLabel("Output size")
-
-                            Menu {
-                                Button("Fit") { model.wholePhoto() }
-                                Button("Fill") { model.fillFrame() }
-                            } label: {
-                                HStack(spacing: 3) {
-                                    Text(model.showsWholePhoto ? "Fit" : "Fill")
-                                    Image(systemName: "chevron.up.chevron.down").font(.system(size: 8, weight: .semibold))
-                                }
-                                .font(.footnote)
-                                .foregroundStyle(DS.secondary)
-                                .frame(minHeight: 44)
-                            }
-                            .accessibilityLabel("Frame")
-
+                            SizeControl(model: model)
+                            FrameControl(model: model, style: .menu)
                             if model.leavesGap {
-                                Button { showFill = true } label: {
-                                    HStack(spacing: 3) {
-                                        Text(model.look.fill.rawValue)
-                                        Image(systemName: "chevron.up.chevron.down").font(.system(size: 8, weight: .semibold))
-                                    }
-                                    .font(.footnote)
-                                    .foregroundStyle(DS.secondary)
-                                    .frame(minHeight: 44)
-                                }
-                                .accessibilityLabel("Fill")
+                                FillControl(model: model)
                             }
                         }
                     }
@@ -413,12 +367,6 @@ struct CanvasView: View {
         .padding(inset)
         .background(DS.bg)
         .clipped()
-        .sheet(isPresented: $showFill) {
-            FillSheet(model: model)
-                .presentationDetents([.height(190)])
-                .presentationCornerRadius(22)
-                .presentationDragIndicator(.visible)
-        }
     }
 
     private func drag(w: CGFloat, h: CGFloat) -> some Gesture {
@@ -534,25 +482,6 @@ struct CanvasView: View {
     }
 }
 
-struct LabeledSlider: View {
-    var title: String
-    @Binding var value: Double
-    var range: ClosedRange<Double>
-    var format: (Double) -> String
-    var body: some View {
-        VStack(spacing: 4) {
-            HStack {
-                Text(title)
-                Spacer()
-                Text(format(value)).monospacedDigit().foregroundStyle(.secondary)
-            }
-            Slider(value: $value, in: range)
-                .accessibilityLabel(title)
-                .accessibilityValue(format(value))
-        }
-    }
-}
-
 struct Controls: View {
     @Bindable var model: EditorModel
     var compact = false
@@ -561,8 +490,6 @@ struct Controls: View {
     /// layout keeps in the line under the photo.
     var roomy = false
     var onExplain: (() -> Void)?
-    @State private var showFillSheet = false
-    @ScaledMetric(relativeTo: .body) private var slideWidth = 72.0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -572,12 +499,6 @@ struct Controls: View {
             }
 
             if let s = model.status { Text(s).font(.footnote).foregroundStyle(.secondary) }
-        }
-        .sheet(isPresented: $showFillSheet) {
-            FillSheet(model: model)
-                .presentationDetents([.height(190)])
-                .presentationCornerRadius(22)
-                .presentationDragIndicator(.visible)
         }
     }
 
@@ -604,45 +525,14 @@ struct Controls: View {
                 }
             }
             controlRow("Size") {
-                Menu {
-                    Picker("Size", selection: $model.outW) {
-                        ForEach(model.sizeChoices, id: \.width) { c in
-                            Text("\(c.width) × \(c.height) px").tag(CGFloat(c.width))
-                        }
-                    }
-                } label: {
-                    HStack(spacing: 4) {
-                        Text(model.sizeText)
-                        Image(systemName: "chevron.up.chevron.down").font(.system(size: 8, weight: .semibold))
-                    }
-                    .font(.footnote)
-                    .foregroundStyle(DS.secondary)
-                    .frame(minHeight: 32)
-                }
-                .accessibilityLabel("Output size")
+                SizeControl(model: model)
             }
             controlRow("Frame") {
-                Picker("Frame", selection: Binding(get: { model.showsWholePhoto },
-                                                   set: { whole in whole ? model.wholePhoto() : model.fillFrame() })) {
-                    Text("Fit").tag(true)
-                    Text("Fill").tag(false)
-                }
-                .pickerStyle(.segmented)
-                .fixedSize(horizontal: true, vertical: false)
-                .accessibilityLabel("Frame")
+                FrameControl(model: model)
             }
             if model.leavesGap {
                 controlRow("Empty") {
-                    Button { showFillSheet = true } label: {
-                        HStack(spacing: 4) {
-                            Text(model.look.fill.rawValue)
-                            Image(systemName: "chevron.up.chevron.down").font(.system(size: 8, weight: .semibold))
-                        }
-                        .font(.footnote)
-                        .foregroundStyle(DS.secondary)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Empty space")
+                    FillControl(model: model)
                 }
             }
             if model.tallWarning {
@@ -732,6 +622,92 @@ struct Controls: View {
             .overlay(RoundedRectangle(cornerRadius: 14).stroke(DS.stroke, lineWidth: 1))
     }
 
+}
+
+/// The output-size menu, shared by the line under the photo and the pane.
+struct SizeControl: View {
+    @Bindable var model: EditorModel
+
+    var body: some View {
+        Menu {
+            Picker("Size", selection: $model.outW) {
+                ForEach(model.sizeChoices, id: \.width) { c in
+                    Text("\(c.width) × \(c.height) px").tag(CGFloat(c.width))
+                }
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Text(model.sizeText)
+                Image(systemName: "chevron.up.chevron.down").font(.system(size: 8, weight: .semibold))
+            }
+            .font(.footnote)
+            .foregroundStyle(DS.secondary)
+            .frame(minHeight: 32)
+        }
+        .accessibilityLabel("Output size")
+    }
+}
+
+/// Fit/Fill: a menu in the line under the photo, a segment in the pane.
+struct FrameControl: View {
+    enum Style { case menu, segmented }
+
+    @Bindable var model: EditorModel
+    var style: Style = .segmented
+
+    var body: some View {
+        switch style {
+        case .menu:
+            Menu {
+                Button("Fit") { model.wholePhoto() }
+                Button("Fill") { model.fillFrame() }
+            } label: {
+                HStack(spacing: 4) {
+                    Text(model.showsWholePhoto ? "Fit" : "Fill")
+                    Image(systemName: "chevron.up.chevron.down").font(.system(size: 8, weight: .semibold))
+                }
+                .font(.footnote)
+                .foregroundStyle(DS.secondary)
+                .frame(minHeight: 44)
+            }
+            .accessibilityLabel("Frame")
+        case .segmented:
+            Picker("Frame", selection: Binding(get: { model.showsWholePhoto },
+                                               set: { whole in whole ? model.wholePhoto() : model.fillFrame() })) {
+                Text("Fit").tag(true)
+                Text("Fill").tag(false)
+            }
+            .pickerStyle(.segmented)
+            .fixedSize(horizontal: true, vertical: false)
+            .accessibilityLabel("Frame")
+        }
+    }
+}
+
+/// The empty-space picker: shows the current fill and opens the fill sheet.
+struct FillControl: View {
+    @Bindable var model: EditorModel
+    @State private var shows = false
+
+    var body: some View {
+        Button { shows = true } label: {
+            HStack(spacing: 4) {
+                Text(model.look.fill.rawValue)
+                Image(systemName: "chevron.up.chevron.down").font(.system(size: 8, weight: .semibold))
+            }
+            .font(.footnote)
+            .foregroundStyle(DS.secondary)
+            .frame(minHeight: 44)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Empty space")
+        .sheet(isPresented: $shows) {
+            FillSheet(model: model)
+                .presentationDetents([.height(190)])
+                .presentationCornerRadius(22)
+                .presentationDragIndicator(.visible)
+        }
+    }
 }
 
 /// Keeps all choices visible when they fit, and uses a native menu on narrow screens or larger text sizes.
@@ -867,13 +843,8 @@ private struct FillSheet: View {
                 HStack(spacing: 10) {
                     ForEach(Palette.all, id: \.hex) { swatch in
                         Button { model.look.colorHex = swatch.hex } label: {
-                            Circle()
-                                .fill(Color(UIColor(hex: swatch.hex)))
-                                .frame(width: 28, height: 28)
-                                .overlay {
-                                    Circle().strokeBorder(DS.ink,
-                                                          lineWidth: model.look.colorHex.uppercased() == swatch.hex ? 2 : 0)
-                                }
+                            PaletteDot(hex: swatch.hex,
+                                       selected: model.look.colorHex.uppercased() == swatch.hex)
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel(swatch.name)

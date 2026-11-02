@@ -7,11 +7,10 @@ struct BatchView: View {
     @State private var picks: [PhotosPickerItem] = []
     @State private var fix: FixContext?
     @State private var showSaveResult = false
-    @Environment(HingeState.self) private var hinge
 
     var body: some View {
         GeometryReader { geo in
-            let wide = geo.size.width >= 700 && (hinge.splitAtFold || geo.size.width > geo.size.height * 0.9)
+            let wide = fitsTwoPanes(width: geo.size.width, height: geo.size.height, minWidth: 700)
             Group {
                 if wide {
                     // steps on the left, the photos and the run button on the right, so a fold
@@ -221,5 +220,18 @@ struct FixView: View {
                 }
         }
         .tint(DS.ink)
+    }
+}
+
+/// A bare 44 pt tap target for the one or two secondary actions in a bar.
+private struct QuietBarButton: ButtonStyle {
+    @Environment(\.isEnabled) private var enabled
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 16, weight: .medium))
+            .foregroundStyle(enabled ? DS.secondary : DS.secondary.opacity(0.35))
+            .opacity(configuration.isPressed ? 0.5 : 1)
+            .frame(width: 44, height: 44)
+            .contentShape(Rectangle())
     }
 }

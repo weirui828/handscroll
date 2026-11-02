@@ -116,12 +116,7 @@ struct HelpView: View {
     private func swatch(_ name: String, _ hex: String) -> some View {
         Button { accentHex = hex } label: {
             VStack(spacing: 6) {
-                Circle()
-                    .fill(Color(UIColor(hex: hex)))
-                    .frame(width: 30, height: 30)
-                    .overlay {
-                        Circle().strokeBorder(DS.ink, lineWidth: accentHex.uppercased() == hex ? 2 : 0)
-                    }
+                PaletteDot(hex: hex, selected: accentHex.uppercased() == hex, size: 30)
                 Text(name).font(.caption2).foregroundStyle(DS.secondary)
             }
             .frame(maxWidth: .infinity)

@@ -182,20 +182,14 @@ final class EditorModel {
         clampLayout()
     }
 
-    func center() {
-        var l = layout
-        l.ox = 0; l.oy = 0
-        layouts[mode] = l
-        clampLayout()
-    }
-
     func clampLayout() {
         guard let geo else { return }
         layouts[mode] = geo.clamped(layout, geo.frame(layout, outW: previewPanelWidth))
         rebuildPreview()
     }
 
-    /// One line under the canvas: slide shape, size and how much of the photo shows.
+    /// What the canvas announces to VoiceOver: slide count, shape, size and how
+    /// much of the photo shows.
     var info: String {
         guard let geo, photo != nil else { return "" }
         if mode == .reel {
@@ -206,12 +200,6 @@ final class EditorModel {
         let share = Int((geo.shownShare(geo.place(l, f), f) * 100).rounded())
         let count = f.n > 1 ? "\(f.n) slides · " : ""
         return "\(count)\(ratioLabel(f.a)) · \(Int(f.pw)) × \(Int(f.ph)) px · \(share)% of the photo shows"
-    }
-
-    /// The photo's own aspect, which is what the canvas actually shows.
-    var photoAspect: CGFloat {
-        guard let photo, photo.size.height > 0 else { return 1.5 }
-        return photo.size.width / photo.size.height
     }
 
     /// The output sizes on offer, with the height that the current shape gives them.
@@ -292,21 +280,6 @@ final class EditorModel {
                     zoom: ((isFit ? m.zoom / contain : m.zoom) * 1e4).rounded() / 1e4, zoomContain: isFit,
                     ox: (m.ox * 1e4).rounded() / 1e4, oy: (m.oy * 1e4).rounded() / 1e4,
                     look: look, outW: outW)
-    }
-
-    func apply(_ step: Step) {
-        guard let geo else { return }
-        stopReel()
-        if step.type == .reel {
-            reel = step.reel
-            reelT = 0
-        } else {
-            layouts[step.type] = geo.resolve(step)
-            look = step.look
-            outW = step.outW
-        }
-        mode = step.type
-        rebuildPreview()
     }
 
     func currentOverride() -> Override {

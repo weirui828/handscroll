@@ -7,7 +7,6 @@ enum DS {
         Color(uiColor: UIColor { $0.userInterfaceStyle == .dark ? UIColor(hex: dark) : UIColor(hex: light) })
     }
     static let bg = dyn("#F6F7F9", "#0A0B0D")
-    static let canvas = dyn("#ECEEF2", "#050608")
     static let card = dyn("#FFFFFF", "#121317")
     static let bar = dyn("#F6F7F9", "#0D0E11")
     static let stroke = dyn("#E4E7EC", "#1E2026")
@@ -29,28 +28,6 @@ extension UIColor {
         getRed(&r, green: &g, blue: &b, alpha: &a)
         return String(format: "#%02X%02X%02X", Int((r * 255).rounded()), Int((g * 255).rounded()), Int((b * 255).rounded()))
     }
-
-    /// Dark text on light colors, white on dark ones.
-    var ink: UIColor {
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        getRed(&r, green: &g, blue: &b, alpha: &a)
-        func lin(_ c: CGFloat) -> CGFloat { c <= 0.03928 ? c / 12.92 : pow((c + 0.055) / 1.055, 2.4) }
-        let L = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b)
-        return L > 0.18 ? UIColor(hex: "#111114") : .white
-    }
-}
-
-/// A bare 44 pt tap target for the one or two secondary actions in a bar.
-struct QuietBarButton: ButtonStyle {
-    @Environment(\.isEnabled) private var enabled
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: 16, weight: .medium))
-            .foregroundStyle(enabled ? DS.secondary : DS.secondary.opacity(0.35))
-            .opacity(configuration.isPressed ? 0.5 : 1)
-            .frame(width: 44, height: 44)
-            .contentShape(Rectangle())
-    }
 }
 
 struct PrimaryButton: ButtonStyle {
@@ -65,7 +42,23 @@ struct PrimaryButton: ButtonStyle {
     }
 }
 
-/// The five colours from the site, used for the empty space around a photo.
+/// The low-chroma palette from the site, used for the empty space around a photo.
+/// One palette colour, ringed when it is the current choice.
+struct PaletteDot: View {
+    var hex: String
+    var selected: Bool
+    var size: CGFloat = 28
+
+    var body: some View {
+        Circle()
+            .fill(Color(UIColor(hex: hex)))
+            .frame(width: size, height: size)
+            .overlay {
+                Circle().strokeBorder(DS.ink, lineWidth: selected ? 2 : 0)
+            }
+    }
+}
+
 enum Palette {
     struct Swatch { let name: String; let hex: String }
     /// Low-chroma Pantone tones that sit next to ink without fighting the photo.

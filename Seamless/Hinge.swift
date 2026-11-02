@@ -9,9 +9,6 @@ enum Openness { case none, closed, partial, open }
 final class HingeState {
     var openness = Openness.none
 
-    /// True when a hinge exists and the screen is open, so the fold sits across the middle of the window.
-    var splitAtFold: Bool { openness == .partial || openness == .open }
-
     @available(iOS 27.1, *)
     func apply(_ hinge: UIHinge?) {
         switch hinge?.status {
