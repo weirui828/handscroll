@@ -273,6 +273,7 @@ struct CanvasView: View {
             }
             .clipped()
             VStack(spacing: 2) {
+                HStack(spacing: 12) {
                         if model.tallWarning {
                             Button { onExplain?() } label: {
                                 Image(systemName: "exclamationmark.circle")
@@ -285,7 +286,6 @@ struct CanvasView: View {
                             .accessibilityHint("Opens Help")
                         }
 
-                HStack(spacing: 20) {
                     if model.mode == .reel {
                         Text(model.sizeText).font(.footnote).foregroundStyle(DS.secondary)
                     } else {
