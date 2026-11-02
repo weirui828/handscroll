@@ -415,7 +415,7 @@ struct Controls: View {
 
     @ViewBuilder
     private var reelControls: some View {
-        group("Reel") {
+        group {
             HStack(spacing: 10) {
                 rowLabel("Pan").frame(width: 58, alignment: .leading)
                 RangeSlider(lower: $model.reel.p0, upper: $model.reel.p1, accent: accent)
@@ -463,6 +463,14 @@ struct Controls: View {
     }
 
     // MARK: Export and batch
+
+    private func group<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        content()
+            .padding(compact ? 10 : 14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(DS.card, in: RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(DS.stroke, lineWidth: 1))
+    }
 
     private func group<Content: View>(_ title: String, trailing: AnyView? = nil,
                                      @ViewBuilder _ content: () -> Content) -> some View {
