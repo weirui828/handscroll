@@ -391,8 +391,15 @@ struct Controls: View {
     @ViewBuilder
     private var reelControls: some View {
         group("Pan") {
-            LabeledSlider(title: "Start", value: $model.reel.p0, range: 0...1) { "\(Int($0 * 100))%" }
-            LabeledSlider(title: "End", value: $model.reel.p1, range: 0...1) { "\(Int($0 * 100))%" }
+            HStack {
+                Text("Start → End").font(.footnote).foregroundStyle(DS.secondary)
+                Spacer()
+                Text("\(Int(model.reel.p0 * 100))% → \(Int(model.reel.p1 * 100))%")
+                    .font(.footnote).foregroundStyle(DS.secondary)
+                    .monospacedDigit()
+            }
+            RangeSlider(lower: $model.reel.p0, upper: $model.reel.p1)
+                .frame(height: 36)
         }
         group("Frame") {
             LabeledSlider(title: "Vertical", value: $model.reel.v, range: 0...1) {
@@ -449,6 +456,68 @@ struct AdaptivePicker<Selection: Hashable, Choices: View>: View {
                 .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
         }
         .frame(maxWidth: .infinity)
+    }
+}
+
+/// Two knobs on one track: the start and the end of the reel pan.
+struct RangeSlider: View {
+    @Binding var lower: Double
+    @Binding var upper: Double
+    var range: ClosedRange<Double> = 0...1
+    var onEdit: (() -> Void)?
+
+    private let knob: CGFloat = 28
+
+    var body: some View {
+        GeometryReader { geo in
+            let width = geo.size.width
+            let span = range.upperBound - range.lowerBound
+            let usable = max(1, width - knob)
+            let lx = CGFloat((lower - range.lowerBound) / span) * usable
+            let ux = CGFloat((upper - range.lowerBound) / span) * usable
+            let lo = min(lx, ux), hi = max(lx, ux)
+
+            ZStack(alignment: .leading) {
+                Capsule().fill(DS.stroke)
+                    .frame(height: 4)
+                    .padding(.horizontal, knob / 2)
+                Capsule().fill(DS.ink)
+                    .frame(width: hi - lo, height: 4)
+                    .offset(x: lo + knob / 2)
+
+                knobView
+                    .offset(x: lx)
+                    .gesture(drag(width: usable, isLower: true))
+                    .accessibilityLabel("Start")
+                    .accessibilityValue("\(Int(lower * 100)) percent")
+
+                knobView
+                    .offset(x: ux)
+                    .gesture(drag(width: usable, isLower: false))
+                    .accessibilityLabel("End")
+                    .accessibilityValue("\(Int(upper * 100)) percent")
+            }
+        }
+    }
+
+    private var knobView: some View {
+        Circle()
+            .fill(DS.card)
+            .frame(width: knob, height: knob)
+            .shadow(color: .black.opacity(0.12), radius: 3, y: 1)
+            .overlay(Circle().stroke(DS.stroke, lineWidth: 1))
+    }
+
+    private func drag(width: CGFloat, isLower: Bool) -> some Gesture {
+        DragGesture(minimumDistance: 0)
+            .onChanged { value in
+                let span = range.upperBound - range.lowerBound
+                let x = (isLower ? CGFloat((lower - range.lowerBound) / span) * width : CGFloat((upper - range.lowerBound) / span) * width)
+                let next = (x + value.translation.width) / width
+                let v = range.lowerBound + Double(min(max(next, 0), 1)) * span
+                if isLower { lower = (v * 100).rounded() / 100 } else { upper = (v * 100).rounded() / 100 }
+                onEdit?()
+            }
     }
 }
 
