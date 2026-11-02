@@ -52,6 +52,10 @@ struct ContentView: View {
                let mode = Mode(rawValue: args[i + 1]) { editor.mode = mode }
             if args.contains("-demoBatch") { showBatch = true }
             if args.contains("-demoPlay") { editor.togglePlay() }
+            if args.contains("-demoColor") {
+                editor.look.fill = .color
+                editor.look.colorHex = "#A78BFA"
+            }
             #endif
         }
         .onChange(of: showBatch) { _, showing in

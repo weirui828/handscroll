@@ -596,6 +596,7 @@ private struct FillSheet: View {
     @Bindable var model: EditorModel
 
     var body: some View {
+        ScrollView {
         VStack(alignment: .leading, spacing: 14) {
             Text("Empty space")
                 .font(.footnote.weight(.semibold))
@@ -617,14 +618,32 @@ private struct FillSheet: View {
             }
 
             if model.look.fill == .color {
-                ColorPicker("Color", selection: Binding(
-                    get: { Color(UIColor(hex: model.look.colorHex)) },
-                    set: { model.look.colorHex = UIColor($0).hexString }))
-                    .font(.footnote)
+                HStack(spacing: 10) {
+                    ForEach(Palette.all, id: \.hex) { swatch in
+                        Button { model.look.colorHex = swatch.hex } label: {
+                            Circle()
+                                .fill(Color(UIColor(hex: swatch.hex)))
+                                .frame(width: 28, height: 28)
+                                .overlay {
+                                    Circle().strokeBorder(DS.ink,
+                                                          lineWidth: model.look.colorHex.uppercased() == swatch.hex ? 2 : 0)
+                                }
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(swatch.name)
+                    }
+                    Spacer(minLength: 4)
+                    ColorPicker("Custom", selection: Binding(
+                        get: { Color(UIColor(hex: model.look.colorHex)) },
+                        set: { model.look.colorHex = UIColor($0).hexString }))
+                        .labelsHidden()
+                }
             }
         }
         .padding(.horizontal, 18).padding(.top, 16)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+        .scrollBounceBehavior(.basedOnSize)
         .background(DS.bg)
     }
 }

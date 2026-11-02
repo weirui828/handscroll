@@ -64,3 +64,15 @@ struct PrimaryButton: ButtonStyle {
             .background(DS.ink.opacity(configuration.isPressed || !enabled ? 0.55 : 1), in: RoundedRectangle(cornerRadius: 12))
     }
 }
+
+/// The five colours from the site, used for the empty space around a photo.
+enum Palette {
+    struct Swatch { let name: String; let hex: String }
+    static let all: [Swatch] = [
+        .init(name: "Violet", hex: "#A78BFA"),
+        .init(name: "Cyan", hex: "#22D3EE"),
+        .init(name: "Gold", hex: "#FBBF24"),
+        .init(name: "Rose", hex: "#F472B6"),
+        .init(name: "Emerald", hex: "#34D399"),
+    ]
+}
