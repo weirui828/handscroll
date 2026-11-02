@@ -491,7 +491,7 @@ private struct ExportActions: View {
                 } } label: {
                     Label("Save", systemImage: "square.and.arrow.down").labelStyle(.iconOnly)
                 }
-                .buttonStyle(InkIconButton())
+                .buttonStyle(QuietBarButton())
                 .accessibilityLabel("Save")
             }
 
