@@ -526,10 +526,18 @@ private struct HelpSettings: View {
                 }
             }
 
-            ColorPicker("Custom colour", selection: Binding(
-                get: { Color(UIColor(hex: accentHex)) },
-                set: { accentHex = UIColor($0).hexString }))
-                .font(.footnote)
+            HStack(spacing: 12) {
+                ColorPicker("Custom colour", selection: Binding(
+                    get: { Color(UIColor(hex: accentHex)) },
+                    set: { accentHex = UIColor($0).hexString }),
+                    supportsOpacity: false)
+                    .labelsHidden()
+                Text("Custom colour")
+                    .font(.footnote)
+                    .foregroundStyle(DS.secondary)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 4)
 
             Divider().overlay(DS.stroke)
 
