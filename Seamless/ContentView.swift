@@ -92,7 +92,7 @@ struct StartView: View {
     var body: some View {
         ScrollView {
         VStack(spacing: 20) {
-            Text("Seamless")
+            Text("handscroll")
                 .font(.system(size: 30, weight: .semibold))
                 .tracking(0.6)
                 .foregroundStyle(DS.text)

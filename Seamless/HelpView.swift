@@ -564,7 +564,7 @@ private struct HelpSettings: View {
             Divider().overlay(DS.stroke)
 
             Text("About").font(.headline)
-            Text("Seamless 1.0")
+            Text("Handscroll 1.0")
                 .font(.footnote)
                 .foregroundStyle(DS.secondary)
         }

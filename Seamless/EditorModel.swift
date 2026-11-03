@@ -351,7 +351,7 @@ enum PhotoNames {
             access = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
         }
         guard access == .authorized || access == .limited else {
-            return "Photos access is off. Allow Seamless to add photos in Settings, then try again."
+            return "Photos access is off. Allow Handscroll to add photos in Settings, then try again."
         }
         do {
             try await PHPhotoLibrary.shared().performChanges {
