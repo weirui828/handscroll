@@ -63,17 +63,18 @@ enum Palette {
     struct Swatch { let name: String; let hex: String }
     /// Low-chroma Pantone tones that sit next to ink without fighting the photo.
     /// Ordered by tone, so neighbours on the grid look related: neutrals, then
-    /// greens through yellow, then the warm end and the purples.
+    /// greens through yellow, then the warm end and the purples. Every hex is the
+    /// Pantone coated value, not a hand-tuned approximation.
     static let all: [Swatch] = [
-        .init(name: "Stone", hex: "#969EA5"),   // Pantone 4151 C
-        .init(name: "Slate", hex: "#9FAFBC"),   // Pantone 5445 C
-        .init(name: "Deep",  hex: "#5E6C74"),   // Pantone 7546 C
-        .init(name: "Teal",  hex: "#8FA6A3"),   // Pantone 5493 C
-        .init(name: "Sage",  hex: "#A3AC9E"),   // Pantone 5665 C
+        .init(name: "Deep",  hex: "#253746"),   // Pantone 7546 C
+        .init(name: "Stone", hex: "#98A4AE"),   // Pantone 7543 C
+        .init(name: "Slate", hex: "#B7C9D3"),   // Pantone 5445 C
+        .init(name: "Teal",  hex: "#7FA9AE"),   // Pantone 5493 C
+        .init(name: "Sage",  hex: "#BAC5B9"),   // Pantone 5665 C
         .init(name: "Olive", hex: "#B0AA7E"),   // Pantone 452 C
         .init(name: "Sand",  hex: "#D6D2C4"),   // Pantone 7527 C
         .init(name: "Clay",  hex: "#AE8A79"),   // Pantone 4725 C
         .init(name: "Rose",  hex: "#C4A4A7"),   // Pantone 7633 C
-        .init(name: "Mauve", hex: "#B3AACD"),   // Pantone 2645 C
+        .init(name: "Mauve", hex: "#AD96DC"),   // Pantone 2645 C
     ]
 }
