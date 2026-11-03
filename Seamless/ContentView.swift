@@ -9,26 +9,21 @@ struct ContentView: View {
     @State private var pick: PhotosPickerItem?
     @State private var showBatch = false
     @State private var showHelp = false
-    @State private var helpTab: HelpTab?
-    @State private var helpScroll: String?
-    #if DEBUG
-    private var debugSettings: Bool { ProcessInfo.processInfo.arguments.contains("-demoSettings") }
-    #else
-    private var debugSettings: Bool { false }
-    #endif
+    @State private var helpOpen: HelpTopic?
+    @State private var helpAnchor: String?
     @State private var shareRequest: ShareRequest?
     var body: some View {
         NavigationStack {
             Group {
                 if editor.photo == nil {
-                    StartView(pick: $pick, status: editor.status, onHelp: { showHelp = true })
+                    StartView(pick: $pick, status: editor.status)
                 } else {
                     EditorView(model: editor, batch: batch, showBatch: $showBatch,
                                shareRequest: $shareRequest,
                                pick: $pick,
                                accent: Color(UIColor(hex: accentHex)),
-                               onHelp: { helpTab = nil; helpScroll = nil; showHelp = true },
-                               onExplain: { helpTab = .basics; helpScroll = "The 3:4 warning"; showHelp = true })
+                               onHelp: { helpOpen = nil; helpAnchor = nil; showHelp = true },
+                               onExplain: { helpOpen = .basics; helpAnchor = "3-4-warning"; showHelp = true })
                 }
             }
             .navigationTitle("")
@@ -51,9 +46,11 @@ struct ContentView: View {
                let mode = Mode(rawValue: args[i + 1]) { editor.mode = mode }
             if args.contains("-demoBatch") { showBatch = true }
             if args.contains("-demoPlay") { editor.togglePlay() }
-            if args.contains("-demoSettings") { showHelp = true }
-            if args.contains("-demoHelp") { showHelp = true }
-            if args.contains("-demoBasics") { helpTab = .basics; showHelp = true }
+            if args.contains("-demoSettings") { helpOpen = .settings; showHelp = true }
+            if let i = args.firstIndex(of: "-demoTopic"), i + 1 < args.count,
+               let topic = HelpTopic(rawValue: args[i + 1]) { helpOpen = topic; showHelp = true }
+            if args.contains("-demoHelp") { helpOpen = nil; showHelp = true }
+            if args.contains("-demoBasics") { helpOpen = .basics; showHelp = true }
             if args.contains("-demoWarning") { editor.setShape(.r34) }
             if args.contains("-demoColor") {
                 editor.look.fill = .color
@@ -71,10 +68,18 @@ struct ContentView: View {
             Task { await editor.load(item); pick = nil }
         }
         .sheet(item: $shareRequest) { request in ShareSheet(items: request.items) }
-        .sheet(isPresented: $showHelp, onDismiss: { helpTab = nil; helpScroll = nil }) {
-            HelpView(startTab: helpTab ?? (debugSettings ? .settings
-                        : showBatch ? .batch : editor.photo == nil ? .basics : HelpTab(editor.mode)),
-                     accentHex: $accentHex, scrollTarget: helpScroll)
+        // Full screen, so the manual gets the width it needs on a Duo and a phone
+        // alike; a centred sheet stayed phone-width in landscape.
+        .fullScreenCover(isPresented: $showHelp, onDismiss: { helpAnchor = nil }) {
+            HelpView(open: helpOpen, anchor: helpAnchor, accentHex: $accentHex,
+                     onOpenMode: { mode in
+                         editor.mode = mode
+                         showHelp = false
+                     },
+                     onOpenBatch: {
+                         showHelp = false
+                         DispatchQueue.main.async { showBatch = true }
+                     })
         }
     }
 }
@@ -83,7 +88,6 @@ struct ContentView: View {
 struct StartView: View {
     @Binding var pick: PhotosPickerItem?
     var status: String?
-    var onHelp: () -> Void = {}
 
     var body: some View {
         ScrollView {
@@ -96,9 +100,6 @@ struct StartView: View {
                 Text("Select a photo").frame(minWidth: 180)
             }
             .buttonStyle(PrimaryButton())
-            Button("Help") { onHelp() }
-                .font(.footnote)
-                .foregroundStyle(DS.secondary)
             if let status { Text(status).foregroundStyle(.red).font(.footnote) }
         }
         .padding()
