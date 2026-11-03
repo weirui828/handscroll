@@ -348,7 +348,7 @@ struct CanvasView: View {
                                         .frame(width: 24, height: 44)
                                 }
                                 .buttonStyle(.plain)
-                                .accessibilityLabel("3:4 warning")
+                                .accessibilityLabel("4:5 warning")
                                 .accessibilityHint("Opens Help")
                             }
 
@@ -543,7 +543,7 @@ struct Controls: View {
                     HStack(spacing: 6) {
                         Image(systemName: "exclamationmark.circle.fill")
                             .foregroundStyle(.orange)
-                        Text("Taller than 3:4. It may be cropped when you post.")
+                        Text("Taller than 4:5. It may be cropped when you post.")
                             .font(.footnote)
                             .foregroundStyle(DS.secondary)
                             .multilineTextAlignment(.leading)

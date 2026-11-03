@@ -276,7 +276,7 @@ private struct HelpChapterView: View {
                 paragraph("**4:5** is the safe ratio. Most apps and scheduling tools accept it.")
             }
 
-            section("The 3:4 warning", anchor: "3-4-warning") {
+            section("The 4:5 warning", anchor: "4-5-warning") {
                 paragraph("A frame taller than **4:5** shows a warning under the photo. Some apps accept 3:4, but scheduling tools stop at 4:5, so a 3:4 post cannot be scheduled.")
             }
 

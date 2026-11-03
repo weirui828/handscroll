@@ -23,7 +23,7 @@ struct ContentView: View {
                                pick: $pick,
                                accent: Color(UIColor(hex: accentHex)),
                                onHelp: { helpOpen = nil; helpAnchor = nil; showHelp = true },
-                               onExplain: { helpOpen = .basics; helpAnchor = "3-4-warning"; showHelp = true })
+                               onExplain: { helpOpen = .basics; helpAnchor = "4-5-warning"; showHelp = true })
                 }
             }
             .navigationTitle("")
