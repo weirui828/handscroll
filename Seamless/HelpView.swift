@@ -524,20 +524,20 @@ private struct HelpSettings: View {
                     .buttonStyle(.plain)
                     .accessibilityLabel(swatch.name)
                 }
-            }
 
-            HStack(spacing: 12) {
-                ColorPicker("Custom colour", selection: Binding(
-                    get: { Color(UIColor(hex: accentHex)) },
-                    set: { accentHex = UIColor($0).hexString }),
-                    supportsOpacity: false)
-                    .labelsHidden()
-                Text("Custom colour")
-                    .font(.footnote)
-                    .foregroundStyle(DS.secondary)
-                Spacer(minLength: 0)
+                // The custom picker is the twelfth cell: three rows of four.
+                VStack(spacing: 6) {
+                    ColorPicker("Custom colour", selection: Binding(
+                        get: { Color(UIColor(hex: accentHex)) },
+                        set: { accentHex = UIColor($0).hexString }),
+                        supportsOpacity: false)
+                        .labelsHidden()
+                        .frame(width: 30, height: 30)
+                    Text("Custom").font(.caption2).foregroundStyle(DS.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .accessibilityLabel("Custom colour")
             }
-            .padding(.horizontal, 4)
 
             Divider().overlay(DS.stroke)
 
