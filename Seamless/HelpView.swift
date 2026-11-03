@@ -3,10 +3,10 @@ import SwiftUI
 /// One chapter of Help, listed in this order on the home screen.
 enum HelpTopic: String, CaseIterable, Identifiable {
     case basics = "Basics"
-    case carousel = "Carousel"
+    case split = "Split"
     case fit = "Fit"
     case crop = "Crop"
-    case reel = "Reel"
+    case drift = "Drift"
     case batch = "Batch"
     case settings = "Settings"
 
@@ -16,10 +16,10 @@ enum HelpTopic: String, CaseIterable, Identifiable {
     var summary: String {
         switch self {
         case .basics: "Move, zoom, shape, fill and export"
-        case .carousel: "Cut one wide photo into slides"
+        case .split: "Cut one wide photo into slides"
         case .fit: "The whole photo on a tall frame"
         case .crop: "A tall crop for the feed"
-        case .reel: "A slow pan as a short video"
+        case .drift: "A slow pan as a short video"
         case .batch: "The same steps on up to 10 photos"
         case .settings: "Accent colour and gesture hints"
         }
@@ -28,10 +28,10 @@ enum HelpTopic: String, CaseIterable, Identifiable {
     var symbol: String {
         switch self {
         case .basics: "hand.draw"
-        case .carousel: "rectangle.split.3x1"
+        case .split: "rectangle.split.3x1"
         case .fit: "rectangle"
         case .crop: "crop"
-        case .reel: "play.rectangle"
+        case .drift: "play.rectangle"
         case .batch: "rectangle.stack"
         case .settings: "slider.horizontal.3"
         }
@@ -40,10 +40,10 @@ enum HelpTopic: String, CaseIterable, Identifiable {
     /// The editor mode a chapter is about, when it has one.
     var mode: Mode? {
         switch self {
-        case .carousel: .carousel
+        case .split: .split
         case .fit: .fit
         case .crop: .crop
-        case .reel: .reel
+        case .drift: .drift
         default: nil
         }
     }
@@ -251,10 +251,10 @@ private struct HelpChapterView: View {
     private var content: some View {
         switch topic {
         case .basics: basics
-        case .carousel: carousel
+        case .split: split
         case .fit: fit
         case .crop: crop
-        case .reel: reel
+        case .drift: drift
         case .batch: batch
         case .settings: EmptyView()
         }
@@ -262,7 +262,7 @@ private struct HelpChapterView: View {
 
     private var basics: some View {
         VStack(alignment: .leading, spacing: 20) {
-            paragraph("Carousel, Fit and Crop start from one photo and end in image files. This chapter is the part they share.")
+            paragraph("Split, Fit and Crop start from one photo and end in image files. This chapter is the part they share.")
 
             section("Move and zoom") {
                 bullets(["Drag the photo to move it.",
@@ -294,9 +294,9 @@ private struct HelpChapterView: View {
         }
     }
 
-    private var carousel: some View {
+    private var split: some View {
         VStack(alignment: .leading, spacing: 20) {
-            paragraph("Carousel cuts one wide photo into slides. Swiped in order, they read as one picture.")
+            paragraph("Split cuts one wide photo into slides. Swiped in order, they read as one picture.")
             HelpDiagram(kind: .slides)
             section("Add or remove slides") {
                 steps(["Find the dashed line that runs past the top and bottom of the photo.",
@@ -326,9 +326,9 @@ private struct HelpChapterView: View {
         }
     }
 
-    private var reel: some View {
+    private var drift: some View {
         VStack(alignment: .leading, spacing: 20) {
-            paragraph("Reel makes a short video that moves slowly across the photo.")
+            paragraph("Drift makes a short video that moves slowly across the photo.")
             HelpDiagram(kind: .pan)
             section("Play") {
                 paragraph("Tap the play button in the middle of the photo. A thin bar at the bottom shows the position; tap again to pause.")
@@ -354,7 +354,7 @@ private struct HelpChapterView: View {
             paragraph("Batch applies the same steps to up to 10 photos.")
             HelpDiagram(kind: .batch)
             section("Add a step") {
-                steps(["Open a photo in Carousel, Fit, Crop or Reel and set it up.",
+                steps(["Open a photo in Split, Fit, Crop or Drift and set it up.",
                        "Tap the plus icon in the bar below the photo.",
                        "Change the settings and tap plus again. Up to 5 steps."])
             }
@@ -434,8 +434,8 @@ private struct HelpChapterView: View {
 
     private var relatedTopics: [HelpTopic] {
         switch topic {
-        case .basics: [.carousel, .fit, .crop, .reel]
-        case .carousel, .fit, .crop, .reel: [.basics]
+        case .basics: [.split, .fit, .crop, .drift]
+        case .split, .fit, .crop, .drift: [.basics]
         case .batch: [.basics]
         case .settings: []
         }

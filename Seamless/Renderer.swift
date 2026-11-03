@@ -97,10 +97,10 @@ enum Renderer {
         }
     }
 
-    /// One Reel frame at time t, `scale` times the 1080 × 1920 size.
-    static func reelFrame(photo: UIImage, geo: Geometry, reel: ReelSettings, t: Double, scale: CGFloat) -> UIImage {
-        let p = geo.reelPlace(reel, t: t)
-        let size = CGSize(width: reelSize.width * scale, height: reelSize.height * scale)
+    /// One Drift frame at time t, `scale` times the 1080 × 1920 size.
+    static func driftFrame(photo: UIImage, geo: Geometry, drift: DriftSettings, t: Double, scale: CGFloat) -> UIImage {
+        let p = geo.driftPlace(drift, t: t)
+        let size = CGSize(width: driftSize.width * scale, height: driftSize.height * scale)
         let fmt = UIGraphicsImageRendererFormat()
         fmt.scale = 1
         fmt.opaque = true

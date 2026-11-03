@@ -115,14 +115,14 @@ final class BatchModel {
     struct Spec {
         var layout: Layout?
         var look: Look
-        var reel: ReelSettings
+        var drift: DriftSettings
     }
 
     func spec(_ photo: BatchPhoto, _ img: UIImage, _ step: Step) -> Spec {
         let o = photo.overrides[step.id]
-        if step.type == .reel { return Spec(layout: nil, look: step.look, reel: o?.reel ?? step.reel) }
+        if step.type == .drift { return Spec(layout: nil, look: step.look, drift: o?.drift ?? step.drift) }
         let geo = Geometry(W: img.size.width, H: img.size.height)
-        return Spec(layout: o?.layout ?? geo.resolve(step), look: o?.look ?? step.look, reel: step.reel)
+        return Spec(layout: o?.layout ?? geo.resolve(step), look: o?.look ?? step.look, drift: step.drift)
     }
 
     /// A small preview of one result.
@@ -133,8 +133,8 @@ final class BatchModel {
         let s = spec(photo, thumb, step)
         let geo = Geometry(W: thumb.size.width, H: thumb.size.height)
         let img: UIImage
-        if step.type == .reel {
-            img = Renderer.reelFrame(photo: thumb, geo: geo, reel: s.reel, t: s.reel.dur / 2, scale: 0.1)
+        if step.type == .drift {
+            img = Renderer.driftFrame(photo: thumb, geo: geo, drift: s.drift, t: s.drift.dur / 2, scale: 0.1)
         } else if let layout = s.layout {
             let f = geo.frame(layout, outW: 140)
             let blur = s.look.fill == .blur ? Renderer.blurred(thumb, size: CGSize(width: f.fw, height: f.fh)) : nil
@@ -153,10 +153,10 @@ final class BatchModel {
             secs += 0.4
             for step in steps {
                 let s = spec(p, t, step)
-                if step.type == .reel {
+                if step.type == .drift {
                     files += 1
-                    bytes += s.reel.dur * 1.5e6
-                    secs += s.reel.dur * 0.4
+                    bytes += s.drift.dur * 1.5e6
+                    secs += s.drift.dur * 0.4
                 } else if let l = s.layout {
                     let f = Geometry(W: t.size.width, H: t.size.height).frame(l, outW: step.outW)
                     files += f.n
@@ -198,10 +198,10 @@ final class BatchModel {
                 for (si, step) in steps.enumerated() {
                     let s = spec(p, full, step)
                     let prefix = "\(p.base)_\(si + 1)-\(step.type.rawValue.lowercased())"
-                    if step.type == .reel {
-                        let r = s.reel, base = p.base, count = min(done + 1, total), all = total
+                    if step.type == .drift {
+                        let r = s.drift, base = p.base, count = min(done + 1, total), all = total
                         let url = try await Task.detached(priority: .userInitiated) {
-                            try await Exporter.reel(photo: full, reel: r, name: "\(base)_\(si + 1)-reel", dir: dir) { x in
+                            try await Exporter.drift(photo: full, drift: r, name: "\(base)_\(si + 1)-drift", dir: dir) { x in
                                 Task { @MainActor in self.progress = "Exporting \(count) of \(all) · \(Int(x * 100))%" }
                             }
                         }.value

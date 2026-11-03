@@ -11,8 +11,8 @@ let thumbPixels: CGFloat = 2e6   // batch previews only need a small copy
 let maxSteps = 5
 let maxPhotos = 10
 let maxSlides = 5     // the slide chips only offer 2...5; fewer slides read better
-let reelSize = CGSize(width: 1080, height: 1920)
-let reelFPS = 30
+let driftSize = CGSize(width: 1080, height: 1920)
+let driftFPS = 30
 
 /// A window that should split into two panes: wide enough for both, and clearly
 /// wider than tall so the split runs down the long edge.
@@ -21,8 +21,28 @@ func fitsTwoPanes(width: CGFloat, height: CGFloat, minWidth: CGFloat = 520) -> B
 }
 
 enum Mode: String, CaseIterable, Identifiable, Codable {
-    case carousel = "Carousel", fit = "Fit", crop = "Crop", reel = "Reel"
+    case split = "Split", fit = "Fit", crop = "Crop", drift = "Drift"
     var id: String { rawValue }
+
+    // Batches saved before the rename still hold "Carousel" and "Reel".
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let raw = try container.decode(String.self)
+        switch raw {
+        case "Carousel": self = .split
+        case "Reel": self = .drift
+        default:
+            guard let mode = Mode(rawValue: raw) else {
+                throw DecodingError.dataCorruptedError(in: container, debugDescription: "Unknown mode: \(raw)")
+            }
+            self = mode
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
 }
 
 enum Shape: String, CaseIterable, Identifiable, Codable {
@@ -50,7 +70,7 @@ struct Look: Codable, Equatable {
     var dim: CGFloat = 0.2
 }
 
-struct ReelSettings: Codable, Equatable {
+struct DriftSettings: Codable, Equatable {
     var dur: Double = 8
     var p0: Double = 0
     var p1: Double = 1
@@ -72,10 +92,10 @@ struct Layout: Codable, Equatable {
 }
 
 /// A step records one mode's settings. Zoom and position are relative, so they carry over to
-/// other photos; a carousel's slide count is nil (auto) unless a count was picked on purpose.
+/// other photos; the Split mode's slide count is nil (auto) unless a count was picked on purpose.
 struct Step: Codable, Identifiable, Equatable {
     var id = UUID().uuidString
-    var type = Mode.carousel
+    var type = Mode.split
     var shape = Shape.auto
     var n: Int?
     var zoom: CGFloat = 1
@@ -84,7 +104,13 @@ struct Step: Codable, Identifiable, Equatable {
     var oy: CGFloat = 0
     var look = Look()
     var outW: CGFloat = 1080
-    var reel = ReelSettings()
+    var drift = DriftSettings()
+
+    // The video settings kept their old key on disk, so saved batches still decode.
+    enum CodingKeys: String, CodingKey {
+        case id, type, shape, n, zoom, zoomContain, ox, oy, look, outW
+        case drift = "reel"
+    }
 
     func sameAs(_ o: Step) -> Bool {
         var a = self, b = o
@@ -93,13 +119,13 @@ struct Step: Codable, Identifiable, Equatable {
     }
 
     var label: String {
-        if type == .reel {
-            let dir = reel.p1 > reel.p0 ? "left to right" : reel.p1 < reel.p0 ? "right to left" : "still"
-            return "Reel · \(Int(reel.dur)) s, \(dir)"
+        if type == .drift {
+            let dir = drift.p1 > drift.p0 ? "left to right" : drift.p1 < drift.p0 ? "right to left" : "still"
+            return "Drift · \(Int(drift.dur)) s, \(dir)"
         }
         let s = shape == .auto ? "Auto" : shape.rawValue
         switch type {
-        case .carousel: return "Carousel · \(s)" + (n.map { " · \($0) slides" } ?? "")
+        case .split: return "Split · \(s)" + (n.map { " · \($0) slides" } ?? "")
         case .fit: return "Fit · \(s) · \(look.fill == .color ? look.colorHex : look.fill.rawValue.lowercased())"
         default: return "Crop · \(s)"
         }
@@ -110,7 +136,7 @@ struct Step: Codable, Identifiable, Equatable {
 struct Override {
     var layout: Layout?
     var look: Look?
-    var reel: ReelSettings?
+    var drift: DriftSettings?
 }
 
 struct Frame {
@@ -212,14 +238,14 @@ struct Geometry {
         return clamped(m, f)
     }
 
-    /// Where the photo sits in the 1080 × 1920 Reel frame at time t.
-    func reelPlace(_ r: ReelSettings, t: Double) -> Placement {
+    /// Where the photo sits in the 1080 × 1920 Drift frame at time t.
+    func driftPlace(_ r: DriftSettings, t: Double) -> Placement {
         var e = r.dur > 0 ? clamp(t / r.dur, 0, 1) : 0
         if r.ease { e = 0.5 - 0.5 * cos(Double.pi * e) }
         let z = CGFloat(r.z0 + (r.z1 - r.z0) * e)
         let pos = CGFloat(r.p0 + (r.p1 - r.p0) * e)
-        let k = max(reelSize.width / W, reelSize.height / H) * z
+        let k = max(driftSize.width / W, driftSize.height / H) * z
         let dw = W * k, dh = H * k
-        return Placement(k: k, dw: dw, dh: dh, x: (reelSize.width - dw) * pos, y: (reelSize.height - dh) * CGFloat(r.v))
+        return Placement(k: k, dw: dw, dh: dh, x: (driftSize.width - dw) * pos, y: (driftSize.height - dh) * CGFloat(r.v))
     }
 }

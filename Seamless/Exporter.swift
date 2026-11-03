@@ -31,10 +31,10 @@ enum Exporter {
         return urls
     }
 
-    static func reel(photo: UIImage, reel: ReelSettings, name: String, dir: URL,
-                     progress: @escaping @Sendable (Double) -> Void) async throws -> URL {
+    static func drift(photo: UIImage, drift: DriftSettings, name: String, dir: URL,
+                      progress: @escaping @Sendable (Double) -> Void) async throws -> URL {
         let url = dir.appendingPathComponent("\(name).mp4")
-        try await ReelEncoder.render(photo: photo, reel: reel, to: url, progress: progress)
+        try await DriftEncoder.render(photo: photo, drift: drift, to: url, progress: progress)
         return url
     }
 }

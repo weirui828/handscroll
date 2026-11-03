@@ -98,7 +98,7 @@ struct EditorView: View {
             if sideBySide {
                 HStack(spacing: 0) {
                     CanvasView(model: model, inset: 20, onExplain: onExplain,
-                               showsInfoRow: model.mode == .reel)
+                               showsInfoRow: model.mode == .drift)
                     Divider().overlay(DS.stroke)
                     VStack(spacing: 0) { header; controls }
                         .frame(width: controlsWidth)
@@ -216,11 +216,11 @@ struct CanvasView: View {
         VStack(spacing: 6) {
             GeometryReader { geo in
                 if let img = model.preview, let frame = model.currentFrame {
-                    let isReel = model.mode == .reel
-                    let aw = isReel ? reelSize.width : frame.fw
-                    let ah = isReel ? reelSize.height : frame.fh
+                    let isDrift = model.mode == .drift
+                    let aw = isDrift ? driftSize.width : frame.fw
+                    let ah = isDrift ? driftSize.height : frame.fh
                     // the grips sit 10 pt past the photo edges, so leave that much room
-                    let verticalMargin: CGFloat = isReel ? 12 : 44
+                    let verticalMargin: CGFloat = isDrift ? 12 : 44
                     let fit = max(0.001, min(max(1, geo.size.width - 24) / aw, max(1, geo.size.height - verticalMargin) / ah))
                     let w = aw * fit, h = ah * fit
                     let photoTop = (geo.size.height - h) / 2
@@ -228,8 +228,8 @@ struct CanvasView: View {
                     ZStack {
                         Image(uiImage: img).resizable().frame(width: w, height: h)
                             .overlay(alignment: .bottom) {
-                                if isReel && model.playing {
-                                    let progress = model.reel.dur > 0 ? min(1, max(0, model.reelT / model.reel.dur)) : 0
+                                if isDrift && model.playing {
+                                    let progress = model.drift.dur > 0 ? min(1, max(0, model.driftT / model.drift.dur)) : 0
                                     let barWidth = min(132, max(0, w - 24))
                                     ZStack(alignment: .leading) {
                                         Capsule()
@@ -246,7 +246,7 @@ struct CanvasView: View {
                                     .transition(.opacity)
                                 }
                             }
-                        if isReel {
+                        if isDrift {
                             Button { model.togglePlay() } label: {
                                 Image(systemName: model.playing ? "pause.fill" : "play.fill")
                                     .font(.system(size: 24, weight: .semibold))
@@ -258,7 +258,7 @@ struct CanvasView: View {
                             .buttonStyle(.plain)
                             .accessibilityLabel(model.playing ? "Pause" : "Play")
                         }
-                        if !isReel {
+                        if !isDrift {
                             // the dashed cuts run a little past the photo and end in a grip
                             Canvas { ctx, size in
                                 let n = max(frame.n, 1)
@@ -326,9 +326,9 @@ struct CanvasView: View {
                     }
                     .frame(width: geo.size.width, height: geo.size.height)
                     .contentShape(Rectangle())
-                    .gesture(drag(w: w, h: h), including: isReel ? .none : .all)
-                    .simultaneousGesture(pinch, including: isReel ? .none : .all)
-                    .onTapGesture(count: 2) { if !isReel { model.resetPosition() } }
+                    .gesture(drag(w: w, h: h), including: isDrift ? .none : .all)
+                    .simultaneousGesture(pinch, including: isDrift ? .none : .all)
+                    .onTapGesture(count: 2) { if !isDrift { model.resetPosition() } }
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel("Photo preview")
                     .accessibilityValue(model.info)
@@ -352,7 +352,7 @@ struct CanvasView: View {
                                 .accessibilityHint("Opens Help")
                             }
 
-                        if model.mode == .reel {
+                        if model.mode == .drift {
                             Text(model.sizeText).font(.footnote).foregroundStyle(DS.secondary)
                         } else {
                             SizeControl(model: model)
@@ -470,7 +470,7 @@ struct CanvasView: View {
     }
 
     private func cycleShape() {
-        let order: [Shape] = model.mode == .carousel ? [.auto, .r45, .r34, .r11] : [.r45, .r34, .r11]
+        let order: [Shape] = model.mode == .split ? [.auto, .r45, .r34, .r11] : [.r45, .r34, .r11]
         let i = order.firstIndex(of: model.layout.shape) ?? 0
         model.setShape(order[(i + 1) % order.count])
     }
@@ -496,8 +496,8 @@ struct Controls: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if model.geo != nil, model.mode == .reel { reelControls }
-            if roomy, model.geo != nil, model.mode != .reel {
+            if model.geo != nil, model.mode == .drift { driftControls }
+            if roomy, model.geo != nil, model.mode != .drift {
                 slideGroup
             }
 
@@ -510,7 +510,7 @@ struct Controls: View {
     @ViewBuilder
     private var slideGroup: some View {
         group {
-            if model.mode == .carousel {
+            if model.mode == .split {
                 controlRow("Slides") {
                     Picker("Slides", selection: Binding(get: { model.layout.n },
                                                         set: { model.setCount($0) })) {
@@ -556,31 +556,31 @@ struct Controls: View {
     }
 
     private var shapeChoices: [Shape] {
-        model.mode == .carousel ? [.auto, .r45, .r34, .r11] : [.r45, .r34, .r11]
+        model.mode == .split ? [.auto, .r45, .r34, .r11] : [.r45, .r34, .r11]
     }
 
-    // MARK: Reel
+    // MARK: Drift
 
     @ViewBuilder
-    private var reelControls: some View {
+    private var driftControls: some View {
         group {
             HStack(spacing: 10) {
                 rowLabel("Pan").frame(width: 58, alignment: .leading)
-                RangeSlider(lower: $model.reel.p0, upper: $model.reel.p1, accent: accent)
+                RangeSlider(lower: $model.drift.p0, upper: $model.drift.p1, accent: accent)
                     .frame(height: 34)
             }
 
-            inlineSlider("Zoom to", value: Binding(get: { model.reel.z1 },
-                                                  set: { model.reel.z1 = $0; model.reel.z0 = 1 }),
+            inlineSlider("Zoom to", value: Binding(get: { model.drift.z1 },
+                                                  set: { model.drift.z1 = $0; model.drift.z0 = 1 }),
                          range: 1...1.6,
-                         text: "\(Int((model.reel.z1 * 100).rounded()))%")
+                         text: "\(Int((model.drift.z1 * 100).rounded()))%")
 
-            inlineSlider("Length", value: Binding(get: { model.reel.dur },
-                                                 set: { model.reel.dur = $0.rounded(); model.reelT = min(model.reelT, model.reel.dur) }),
+            inlineSlider("Length", value: Binding(get: { model.drift.dur },
+                                                 set: { model.drift.dur = $0.rounded(); model.driftT = min(model.driftT, model.drift.dur) }),
                          range: 3...30,
-                         text: "\(Int(model.reel.dur)) s")
+                         text: "\(Int(model.drift.dur)) s")
 
-            Toggle("Ease in and out", isOn: $model.reel.ease)
+            Toggle("Ease in and out", isOn: $model.drift.ease)
                 .font(.footnote)
                 .foregroundStyle(DS.secondary)
         }
@@ -746,7 +746,7 @@ private struct ControlsHeightKey: PreferenceKey {
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
 }
 
-/// Two knobs on one track: the start and the end of the reel pan.
+/// Two knobs on one track: the start and the end of the drift pan.
 struct RangeSlider: View {
     @Binding var lower: Double
     @Binding var upper: Double

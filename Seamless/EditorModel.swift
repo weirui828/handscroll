@@ -18,12 +18,12 @@ final class EditorModel {
     var baseName = "photo"
     /// The picker item the photo came from, so Batch can include it.
     private(set) var sourceItem: PhotosPickerItem?
-    var mode = Mode.carousel { didSet { stopReel(); rebuildPreview() } }
+    var mode = Mode.split { didSet { stopDrift(); rebuildPreview() } }
     var layouts: [Mode: Layout] = [:]
     var look = Look() { didSet { rebuildPreview() } }
     var outW: CGFloat = 1080
-    var reel = ReelSettings() { didSet { rebuildPreview() } }
-    var reelT: Double = 0 { didSet { rebuildPreview() } }
+    var drift = DriftSettings() { didSet { rebuildPreview() } }
+    var driftT: Double = 0 { didSet { rebuildPreview() } }
     var playing = false
     var preview: UIImage?
     var status: String?
@@ -42,8 +42,8 @@ final class EditorModel {
         let geo = Geometry(W: fix.image.size.width, H: fix.image.size.height)
         mode = fix.step.type
         outW = fix.step.outW
-        if fix.step.type == .reel {
-            reel = fix.existing?.reel ?? fix.step.reel
+        if fix.step.type == .drift {
+            drift = fix.existing?.drift ?? fix.step.drift
         } else {
             layouts[fix.step.type] = fix.existing?.layout ?? geo.resolve(fix.step)
             look = fix.existing?.look ?? fix.step.look
@@ -97,10 +97,10 @@ final class EditorModel {
 
     func reset() {
         guard let geo else { return }
-        stopReel()
-        reelT = 0
-        reel = ReelSettings()
-        layouts[.carousel] = Layout(n: geo.bestN, shape: .auto)
+        stopDrift()
+        driftT = 0
+        drift = DriftSettings()
+        layouts[.split] = Layout(n: geo.bestN, shape: .auto)
         for m in [Mode.fit, .crop] { layouts[m] = Layout(n: 1, shape: .r45) }
         layouts[.fit] = refitted(layouts[.fit]!)
         rebuildPreview()
@@ -192,8 +192,8 @@ final class EditorModel {
     /// much of the photo shows.
     var info: String {
         guard let geo, photo != nil else { return "" }
-        if mode == .reel {
-            return "\(Int(reelSize.width)) × \(Int(reelSize.height)) px · \(reelFPS) fps · no sound"
+        if mode == .drift {
+            return "\(Int(driftSize.width)) × \(Int(driftSize.height)) px · \(driftFPS) fps · no sound"
         }
         let f = geo.frame(layout, outW: outW)
         let l = geo.clamped(layout, f)
@@ -204,7 +204,7 @@ final class EditorModel {
 
     /// The output sizes on offer, with the height that the current shape gives them.
     var sizeChoices: [(width: Int, height: Int)] {
-        guard let geo, photo != nil, mode != .reel else { return [] }
+        guard let geo, photo != nil, mode != .drift else { return [] }
         let a = geo.panelAspect(layout)
         return [1080, 1440, 2160].map { w in (w, Int((CGFloat(w) / a).rounded())) }
     }
@@ -213,14 +213,14 @@ final class EditorModel {
     /// in the chips, so this only states the output size.
     var sizeText: String {
         guard let geo, photo != nil else { return "" }
-        if mode == .reel { return "\(Int(reelSize.width)) × \(Int(reelSize.height)) px · \(reelFPS) fps" }
+        if mode == .drift { return "\(Int(driftSize.width)) × \(Int(driftSize.height)) px · \(driftFPS) fps" }
         let f = geo.frame(layout, outW: outW)
         return "\(Int(f.pw)) × \(Int(f.ph)) px"
     }
 
     /// Instagram's app accepts down to 3:4; schedulers stop at 4:5.
     var tallWarning: Bool {
-        guard let geo, mode != .reel else { return false }
+        guard let geo, mode != .drift else { return false }
         return geo.panelAspect(layout) < safeAspect - 0.006
     }
 
@@ -237,8 +237,8 @@ final class EditorModel {
 
     func rebuildPreview() {
         guard let small, let geo else { preview = nil; return }
-        if mode == .reel {
-            preview = Renderer.reelFrame(photo: small, geo: geo, reel: reel, t: reelT, scale: 0.5)
+        if mode == .drift {
+            preview = Renderer.driftFrame(photo: small, geo: geo, drift: drift, t: driftT, scale: 0.5)
             return
         }
         let f = geo.frame(layout, outW: previewPanelWidth)
@@ -246,20 +246,20 @@ final class EditorModel {
                                 blur: look.fill == .blur ? blur(for: f) : nil, panel: nil)
     }
 
-    // MARK: Reel playback
+    // MARK: Drift playback
 
-    func stopReel() { playing = false }
+    func stopDrift() { playing = false }
 
     func togglePlay() {
         if playing { playing = false; return }
         playing = true
-        if reelT >= reel.dur - 0.01 { reelT = 0 }
-        let t0 = Date().addingTimeInterval(-reelT)
+        if driftT >= drift.dur - 0.01 { driftT = 0 }
+        let t0 = Date().addingTimeInterval(-driftT)
         Task {
             while playing {
                 let t = Date().timeIntervalSince(t0)
-                if t >= reel.dur { reelT = reel.dur; playing = false; break }
-                reelT = t
+                if t >= drift.dur { driftT = drift.dur; playing = false; break }
+                driftT = t
                 try? await Task.sleep(for: .milliseconds(16))
             }
         }
@@ -269,21 +269,21 @@ final class EditorModel {
 
     func captureStep() -> Step? {
         guard let geo else { return nil }
-        if mode == .reel {
-            return Step(type: .reel, reel: reel)
+        if mode == .drift {
+            return Step(type: .drift, drift: drift)
         }
         let f = geo.frame(layout, outW: outW)
         let m = geo.clamped(layout, f)
         let contain = geo.fitZoom(f)
         let isFit = mode == .fit
-        return Step(type: mode, shape: m.shape, n: mode == .carousel ? (m.nPicked ? m.n : nil) : 1,
+        return Step(type: mode, shape: m.shape, n: mode == .split ? (m.nPicked ? m.n : nil) : 1,
                     zoom: ((isFit ? m.zoom / contain : m.zoom) * 1e4).rounded() / 1e4, zoomContain: isFit,
                     ox: (m.ox * 1e4).rounded() / 1e4, oy: (m.oy * 1e4).rounded() / 1e4,
                     look: look, outW: outW)
     }
 
     func currentOverride() -> Override {
-        mode == .reel ? Override(reel: reel) : Override(layout: layout, look: look)
+        mode == .drift ? Override(drift: drift) : Override(layout: layout, look: look)
     }
 
     // MARK: Export
@@ -292,14 +292,14 @@ final class EditorModel {
         guard let photo else { return [] }
         busy = true
         defer { busy = false; progress = nil }
-        stopReel()
+        stopDrift()
         let dir = Exporter.newFolder()
         let base = baseName
-        if mode == .reel {
+        if mode == .drift {
             do {
-                let r = reel
+                let r = drift
                 let url = try await Task.detached(priority: .userInitiated) {
-                    try await Exporter.reel(photo: photo, reel: r, name: "\(base)_reel", dir: dir) { x in
+                    try await Exporter.drift(photo: photo, drift: r, name: "\(base)_drift", dir: dir) { x in
                         Task { @MainActor in self.progress = "Rendering \(Int(x * 100))%…" }
                     }
                 }.value
