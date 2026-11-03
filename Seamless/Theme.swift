@@ -70,10 +70,10 @@ enum Palette {
         .init(name: "Deep",  hex: "#5E6C74"),   // Pantone 7546 C
         .init(name: "Teal",  hex: "#8FA6A3"),   // Pantone 5493 C
         .init(name: "Sage",  hex: "#A3AC9E"),   // Pantone 5665 C
-        .init(name: "Olive", hex: "#A8A482"),   // muted olive
+        .init(name: "Olive", hex: "#B0AA7E"),   // Pantone 452 C
         .init(name: "Sand",  hex: "#D6D2C4"),   // Pantone 7527 C
-        .init(name: "Clay",  hex: "#B49A8D"),   // warm clay
-        .init(name: "Rose",  hex: "#C2A8AB"),   // dusty rose
+        .init(name: "Clay",  hex: "#AE8A79"),   // Pantone 4725 C
+        .init(name: "Rose",  hex: "#C4A4A7"),   // Pantone 7633 C
         .init(name: "Mauve", hex: "#B3AACD"),   // Pantone 2645 C
     ]
 }
