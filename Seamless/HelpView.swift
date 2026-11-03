@@ -273,11 +273,11 @@ private struct HelpChapterView: View {
             section("Shape") {
                 HelpDiagram(kind: .corner)
                 paragraph("The bottom-right corner sets the shape. Drag it up or down; tap it to step through **Auto**, **4:5**, **3:4** and **1:1**.")
-                paragraph("**4:5** is the safe ratio. Instagram and scheduling tools all accept it.")
+                paragraph("**4:5** is the safe ratio. Most apps and scheduling tools accept it.")
             }
 
             section("The 3:4 warning", anchor: "3-4-warning") {
-                paragraph("A frame taller than **4:5** shows a warning under the photo. The Instagram app accepts 3:4, but scheduling tools stop at 4:5, so a 3:4 post cannot be scheduled.")
+                paragraph("A frame taller than **4:5** shows a warning under the photo. Some apps accept 3:4, but scheduling tools stop at 4:5, so a 3:4 post cannot be scheduled.")
             }
 
             section("Empty space") {
@@ -317,7 +317,7 @@ private struct HelpChapterView: View {
 
     private var crop: some View {
         VStack(alignment: .leading, spacing: 20) {
-            paragraph("Crop makes a tall version of the photo for Instagram. Keep the full photo for your website.")
+            paragraph("Crop makes a tall version of the photo to post. Keep the full photo for your website.")
             HelpDiagram(kind: .crop)
             section("Choose the part") {
                 steps(["Tap the corner at the bottom right to choose a shape.",
@@ -344,7 +344,7 @@ private struct HelpChapterView: View {
                          "**Ease in and out** makes the movement start and stop slowly."])
             }
             section("Export") {
-                paragraph("The video is 1080 × 1920 px, 30 frames per second, and has no sound. Add music in Instagram.")
+                paragraph("The video is 1080 × 1920 px, 30 frames per second, and has no sound. Add music in the app you post from.")
             }
         }
     }

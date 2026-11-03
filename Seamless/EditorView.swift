@@ -543,7 +543,7 @@ struct Controls: View {
                     HStack(spacing: 6) {
                         Image(systemName: "exclamationmark.circle.fill")
                             .foregroundStyle(.orange)
-                        Text("Taller than 3:4 can be cropped on Instagram.")
+                        Text("Taller than 3:4. It may be cropped when you post.")
                             .font(.footnote)
                             .foregroundStyle(DS.secondary)
                             .multilineTextAlignment(.leading)
