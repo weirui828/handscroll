@@ -146,10 +146,6 @@ private struct HelpHome: View {
                     Button { onSelect(topic) } label: { row(topic) }
                         .buttonStyle(.plain)
                 }
-                Text("Works offline. Your photos never leave this device.")
-                    .font(.footnote)
-                    .foregroundStyle(DS.secondary)
-                    .padding(.top, 6)
             }
             .padding(16)
             .frame(maxWidth: 640, alignment: .leading)
@@ -568,7 +564,7 @@ private struct HelpSettings: View {
             Divider().overlay(DS.stroke)
 
             Text("About").font(.headline)
-            Text("Seamless 1.0 · no account · works offline. Your photos never leave this device.")
+            Text("Seamless 1.0")
                 .font(.footnote)
                 .foregroundStyle(DS.secondary)
         }
