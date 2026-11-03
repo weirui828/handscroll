@@ -62,16 +62,18 @@ struct PaletteDot: View {
 enum Palette {
     struct Swatch { let name: String; let hex: String }
     /// Low-chroma Pantone tones that sit next to ink without fighting the photo.
+    /// Ordered by tone, so neighbours on the grid look related: neutrals, then
+    /// greens through yellow, then the warm end and the purples.
     static let all: [Swatch] = [
         .init(name: "Stone", hex: "#969EA5"),   // Pantone 4151 C
         .init(name: "Slate", hex: "#9FAFBC"),   // Pantone 5445 C
-        .init(name: "Sage",  hex: "#A3AC9E"),   // Pantone 5665 C
-        .init(name: "Sand",  hex: "#D6D2C4"),   // Pantone 7527 C
-        .init(name: "Mauve", hex: "#B3AACD"),   // Pantone 2645 C
-        .init(name: "Teal",  hex: "#8FA6A3"),   // Pantone 5493 C
         .init(name: "Deep",  hex: "#5E6C74"),   // Pantone 7546 C
-        .init(name: "Clay",  hex: "#B49A8D"),   // warm clay
+        .init(name: "Teal",  hex: "#8FA6A3"),   // Pantone 5493 C
+        .init(name: "Sage",  hex: "#A3AC9E"),   // Pantone 5665 C
         .init(name: "Olive", hex: "#A8A482"),   // muted olive
+        .init(name: "Sand",  hex: "#D6D2C4"),   // Pantone 7527 C
+        .init(name: "Clay",  hex: "#B49A8D"),   // warm clay
         .init(name: "Rose",  hex: "#C2A8AB"),   // dusty rose
+        .init(name: "Mauve", hex: "#B3AACD"),   // Pantone 2645 C
     ]
 }
