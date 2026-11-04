@@ -52,6 +52,10 @@ struct ContentView: View {
             if args.contains("-demoHelp") { helpOpen = nil; showHelp = true }
             if args.contains("-demoBasics") { helpOpen = .basics; showHelp = true }
             if args.contains("-demoWarning") { editor.setShape(.r34) }
+            if let i = args.firstIndex(of: "-demoSlides"), i + 1 < args.count,
+               let count = Int(args[i + 1]) { editor.setCount(count) }
+            if let i = args.firstIndex(of: "-demoShape"), i + 1 < args.count,
+               let shape = Shape(rawValue: args[i + 1]) { editor.setShape(shape) }
             if args.contains("-demoColor") {
                 editor.look.fill = .color
                 editor.look.colorHex = "#A78BFA"
