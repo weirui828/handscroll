@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import UIKit
 
 /// The canvas and the controls sit in two separate panes. A wide, clearly landscape
 /// window puts them side by side; anything narrower stacks the canvas above the
@@ -62,6 +63,7 @@ struct EditorView: View {
     }
 
     private func saveFiles() {
+        model.status = nil
         Task {
             let urls = await model.exportFiles()
             if !urls.isEmpty { await model.saveToPhotos(urls) }
@@ -189,9 +191,33 @@ struct EditorView: View {
             }
         }
         .alert("Export", isPresented: $showResult) {
-            Button("OK", role: .cancel) {}
+            if model.status?.hasPrefix("Photos access is off") == true {
+                Button("Open Settings") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                    model.status = nil
+                }
+            }
+            Button("OK", role: .cancel) { model.status = nil }
         } message: {
             Text(model.status ?? "No files were saved.")
+        }
+        .task {
+            #if DEBUG
+            // -demoSave exercises the save flow without a tap, for testing.
+            if ProcessInfo.processInfo.arguments.contains("-demoSave") {
+                try? await Task.sleep(for: .seconds(2))
+                saveFiles()
+                if ProcessInfo.processInfo.arguments.contains("-demoDismiss") {
+                    try? await Task.sleep(for: .seconds(3))
+                    showResult = false
+                }
+            }
+            #endif
+        }
+        .onChange(of: showResult) { _, showing in
+            if !showing { model.status = nil }
         }
     }
 }
