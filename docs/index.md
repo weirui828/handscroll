@@ -1,3 +1,9 @@
+---
+layout: default
+title: Handscroll
+permalink: /
+---
+
 # Handscroll
 
 One wide photo, a few good ways to post it.

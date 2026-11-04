@@ -1,3 +1,9 @@
+---
+layout: default
+title: Privacy Policy
+permalink: /privacy/
+---
+
 # Privacy Policy
 
 Handscroll does not collect, store, or send any personal data.

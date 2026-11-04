@@ -1,3 +1,9 @@
+---
+layout: default
+title: Support
+permalink: /support/
+---
+
 # Support
 
 Handscroll turns one wide photo into slides, a tall crop, or a short pan video.
