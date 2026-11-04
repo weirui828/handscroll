@@ -16,7 +16,7 @@ targets:
     sources: [Seamless]
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.weiniverse.seamless
+        PRODUCT_BUNDLE_IDENTIFIER: com.weiniverse.handscroll
         TARGETED_DEVICE_FAMILY: "1"
         GENERATE_INFOPLIST_FILE: YES
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
