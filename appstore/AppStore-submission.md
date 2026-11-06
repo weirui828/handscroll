@@ -188,18 +188,18 @@ Photo selection uses the system photo picker, which needs no photo library permi
 
 ### Screenshots
 
-上传 `appstore/screenshots/` 里的 6 张到 **6.9" 显示** 槽位（1320 × 2868，顺序就是文件名顺序）：
+2026 版的 App Store Connect 按**设备类别**分栏，iPhone 只剩两个槽位（旧 UI 的 6.9" 槽位已没有）：
 
-| 顺序 | 文件 | 画面 |
-| --- | --- | --- |
-| 1 | `01-split.png` | Split，3 张滑片 |
-| 2 | `02-drift.png` | Drift，播放态 + Pan/Zoom/Length |
-| 3 | `03-fit.png` | Fit，4:5 + Blur 填充 |
-| 4 | `04-crop.png` | Crop，4:5 |
-| 5 | `05-help.png` | Help › Basics（内置手册） |
-| 6 | `06-settings.png` | Help › Settings（11 色 + Custom） |
+| 槽位 | 支持的尺寸 | 上传目录 | 张数 |
+| --- | --- | --- | --- |
+| iPhone with Dynamic Island (medium display) | 1206 × 2622（6.3"）或 1179 × 2556（6.1"） | `appstore/screenshots-6.3/` | 6 |
+| iPhone Duo | 1398 × 2034（外屏）或 2007 × 2853（内屏） | `appstore/screenshots-duo/` | 6 |
 
-App 图标已经在 asset catalog 里（1024 × 1024、无 alpha），不需要单独上传。6.5"/5.5" 槽位可留空。
+两张表里顺序都是：`01-split`（Split，3 张滑片）、`02-drift`（Drift，播放态）、`03-fit`（Fit，4:5 + Blur）、`04-crop`（Crop，4:5）、`05-help`（Help › Basics）、`06-settings`（11 色 + Custom）。
+
+- iPad 13"、Apple Watch 槽位对 iPhone-only App 不需要填。
+- `appstore/screenshots/`（1320 × 2868）是旧 6.9" 规格的截图，只用于 README，不用上传。
+- 每个槽位 3–10 张，6 张刚好；App 图标已在 asset catalog（1024 × 1024、无 alpha），不用单独传。
 
 ### Version Release
 
@@ -211,29 +211,43 @@ App 图标已经在 asset catalog 里（1024 × 1024、无 alpha），不需要�
 cd ~/dev/seamless
 xcodegen generate
 xcodebuild -project Seamless.xcodeproj -scheme Seamless -sdk iphonesimulator \
-  -destination 'platform=iOS Simulator,name=iPhone 18 Pro Max' -derivedDataPath .build/dd build
+  -destination 'platform=iOS Simulator,name=iPhone 18 Pro' -derivedDataPath .build/dd build
 
-xcrun simctl boot "iPhone 18 Pro Max" 2>/dev/null
-xcrun simctl install booted .build/dd/Build/Products/Debug-iphonesimulator/Seamless.app
-xcrun simctl status_bar booted override --time "9:41" --batteryState charged \
+# ① iPhone with Dynamic Island (medium display) → 1206 × 2622
+DEV="iPhone 18 Pro"
+xcrun simctl boot "$DEV" 2>/dev/null
+xcrun simctl install "$DEV" .build/dd/Build/Products/Debug-iphonesimulator/Seamless.app
+xcrun simctl status_bar "$DEV" override --time "9:41" --batteryState charged \
   --batteryLevel 100 --wifiBars 3 --cellularBars 4
 
-shot () { # name, args…
-  xcrun simctl terminate booted com.weiniverse.handscroll 2>/dev/null
-  xcrun simctl launch booted com.weiniverse.handscroll "${@:2}" >/dev/null
-  sleep 5
-  xcrun simctl io booted screenshot "appstore/screenshots/$1.png" 2>/dev/null
+shot () { # dir, name, args…
+  dir=$1; name=$2; shift 2
+  xcrun simctl terminate "$DEV" com.weiniverse.handscroll 2>/dev/null
+  xcrun simctl launch "$DEV" com.weiniverse.handscroll "$@" >/dev/null
+  sleep 12
+  xcrun simctl io "$DEV" screenshot "appstore/$dir/$name.png" 2>/dev/null
 }
 
-shot 01-split    -demoPhoto -demoClean -demoMode Split -demoSlides 3 -demoShape 4:5
-shot 02-drift    -demoPhoto -demoClean -demoMode Drift
-shot 03-fit      -demoPhoto -demoClean -demoMode Fit  -demoShape 4:5
-shot 04-crop     -demoPhoto -demoClean -demoMode Crop -demoShape 4:5
-shot 05-help     -demoPhoto -demoClean -demoBasics
-shot 06-settings -demoPhoto -demoClean -demoSettings -demoColor
+shot screenshots-6.3 01-split    -demoPhoto -demoClean -demoMode Split -demoSlides 3 -demoShape 4:5
+shot screenshots-6.3 02-drift    -demoPhoto -demoClean -demoMode Drift
+shot screenshots-6.3 03-fit      -demoPhoto -demoClean -demoMode Fit  -demoShape 4:5
+shot screenshots-6.3 04-crop     -demoPhoto -demoClean -demoMode Crop -demoShape 4:5
+shot screenshots-6.3 05-help     -demoPhoto -demoClean -demoBasics
+shot screenshots-6.3 06-settings -demoPhoto -demoClean -demoSettings -demoColor
+
+# ② iPhone Duo 外屏 → 1398 × 2034（内屏 2007 × 2853 需要先在 Simulator 里展开）
+DUO="iPhone Duo"
+xcrun simctl boot "$DUO" 2>/dev/null
+xcrun simctl install "$DUO" .build/dd/Build/Products/Debug-iphonesimulator/Seamless.app
+xcrun simctl status_bar "$DUO" override --time "9:41" --batteryState charged \
+  --batteryLevel 100 --wifiBars 3 --cellularBars 4
+OUTER=$(xcrun simctl io "$DUO" enumerate | awk '/Default width: 1398/{print prev} /UUID:/{prev=$2}')
+# 每张：launch 同上面参数，然后
+#   sleep 14
+#   xcrun simctl io "$DUO" screenshot --display="$OUTER" appstore/screenshots-duo/<name>.png
 ```
 
-拍照前把 `Seamless/demo.jpg` 换成你自己的照片即可（同一尺寸，宽图最佳）。
+注意：模拟器上 App 真正画出来要 10–15 秒，`sleep 5` 会截到白屏；拍照前也可以把 `Seamless/demo.jpg` 换成自己的照片（宽图最佳）。
 
 ## 5. 提交审核 checklist
 
