@@ -249,12 +249,12 @@ h2 {
 
 .strip {
   display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(168px, 1fr);
-  gap: clamp(12px, 1.8vw, 20px);
-  overflow-x: auto;
-  padding-bottom: 14px;
-  scrollbar-width: thin;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(14px, 2vw, 24px);
+}
+
+@media (max-width: 760px) {
+  .strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 .strip figure { margin: 0; }
@@ -324,14 +324,16 @@ h2 {
 
 .privacy {
   background: var(--color-surface-sunken);
-  border-block: 1px solid var(--color-border-subtle);
-  padding-block: clamp(64px, 8vw, 104px);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: calc(var(--radius-lg, 18px) + 10px);
+  padding: clamp(34px, 5vw, 72px) clamp(24px, 4vw, 64px);
 }
 
 .privacy-grid {
   display: grid;
-  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
-  gap: clamp(32px, 5vw, 72px);
+  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+  gap: clamp(32px, 5vw, 80px);
+  align-items: start;
 }
 
 .privacy h2 { max-width: 12ch; }
@@ -342,6 +344,7 @@ h2 {
   list-style: none;
   display: grid;
   gap: 18px;
+  max-width: 33rem;
 }
 
 .privacy-list li {
