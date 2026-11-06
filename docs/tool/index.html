@@ -120,15 +120,14 @@
     }
     .drop {
       width: min(560px, 100%);
-      padding: 36px 32px;
+      padding: 30px 32px;
       border: 1.5px dashed rgba(255, 255, 255, .18);
       border-radius: 16px;
       text-align: center;
       transition: border-color .15s, background .15s;
     }
     body.dragging .drop { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, transparent); }
-    .drop h1 { margin: 0 0 18px; font-family: "Space Grotesk", sans-serif; font-size: 2rem; letter-spacing: -.02em; }
-    .drop .lede { margin: -6px 0 18px; color: var(--warn); }
+    .drop .lede { margin: 0 0 16px; color: var(--warn); }
 
     /* Workspace */
     .app {
@@ -453,7 +452,6 @@
   <main>
     <section class="empty" id="empty">
       <div class="drop">
-        <h1>Handscroll</h1>
         <p class="lede" id="loadError" hidden></p>
         <div class="start-btns">
           <button class="btn primary" id="choose">Choose a photo</button>
