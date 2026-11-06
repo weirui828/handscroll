@@ -314,6 +314,20 @@
     .help-foot { margin: 0; padding: 12px 24px; border-top: 1px solid var(--line); color: var(--faint); font-size: .8125rem; }
 
     .start-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+    .quiet-link {
+      display: block;
+      margin: 12px auto 0;
+      padding: 0;
+      border: 0;
+      background: none;
+      color: var(--muted);
+      font: inherit;
+      font-size: .8125rem;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      cursor: pointer;
+    }
+    .quiet-link:hover { color: var(--text); }
 
     /* Batch steps in the panel */
     .steps { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -457,8 +471,8 @@
         <p class="lede" id="loadError" hidden></p>
         <div class="start-btns">
           <button class="btn primary" id="choose">Choose a photo</button>
-          <button class="btn" id="startBatch" hidden>Open batch</button>
         </div>
+        <button class="quiet-link" id="startBatch" hidden></button>
       </div>
     </section>
 
@@ -1274,7 +1288,9 @@
       wf.hidden = !steps.length || S.view !== "editor" || !!S.fix;
       wf.innerHTML = `Batch<span class="wide-only"> · ${steps.length} step${steps.length === 1 ? "" : "s"}</span><span class="narrow-only"> (${steps.length})</span>`;
       $("#change").hidden = S.view !== "editor" || !!S.fix;
-      $("#startBatch").hidden = !steps.length;
+      const sb = $("#startBatch");
+      sb.hidden = !steps.length;
+      sb.textContent = `Open your batch (${steps.length} step${steps.length === 1 ? "" : "s"})`;
     }
 
     function showView(v) {
