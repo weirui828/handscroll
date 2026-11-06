@@ -84,7 +84,7 @@ The store screenshots in [`appstore/screenshots/`](appstore/screenshots) were ca
 | `Seamless/Geometry.swift` | `Mode`, `Shape`, and the frame maths behind Split/Fit/Crop |
 | `Seamless/Renderer.swift`, `DriftEncoder.swift`, `Exporter.swift` | drawing, MP4 encoding, file output |
 | `Seamless/HelpView.swift` | the in-app manual |
-| `docs/` | the GitHub Pages site (privacy policy and support) |
+| `docs/` | the GitHub Pages site: product page, privacy policy, support, and the browser version at `docs/tool/` |
 | `appstore/` | App Store screenshots and the submission checklist |
 
 ## Contributing
