@@ -201,6 +201,17 @@ Photo selection uses the system photo picker, which needs no photo library permi
 - `appstore/screenshots/`（1320 × 2868）是旧 6.9" 规格的截图，只用于 README，不用上传。
 - 每个槽位 3–10 张，6 张刚好；App 图标已在 asset catalog（1024 × 1024、无 alpha），不用单独传。
 
+### Creative assets（可选，不阻塞提交）
+
+iOS 27 的 App Store 产品页头图和搜索结果图，可选。已生成一张 **Universal 图**，两个位置共用：
+
+- 文件：`appstore/creative/universal-5244x2950.png`（5244 × 2950、16:9、PNG、无透明）
+- 效果预览：`appstore/creative/preview-header-21x9.png`（头图裁切）、`preview-search-3x2.png`（搜索卡片裁切）
+- 上传：版本页 **Creative Assets** → **Upload** → 选这个文件 → 进 Asset Library 等审核通过 → assign 到 Header 和 Search Results
+- 想重做：改 `appstore/creative/make-universal.py` 后运行（需要 Pillow）
+
+素材审核不阻塞 App 提交，首版可以先空着。
+
 ### Version Release
 
 先选 **Manually release this version**，审核通过后自己按发布。
