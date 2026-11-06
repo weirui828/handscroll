@@ -42,9 +42,11 @@ open Seamless.xcodeproj
 >   -destination 'generic/platform=iOS' -archivePath build/Handscroll.xcarchive archive \
 >   -allowProvisioningUpdates
 > xcodebuild -exportArchive -archivePath build/Handscroll.xcarchive \
->   -exportOptionsPlist ExportOptions.plist -exportPath build/export -allowProvisioningUpdates
+>   -exportOptionsPlist appstore/ExportOptions.plist -exportPath build/export -allowProvisioningUpdates
 > xcrun altool --upload-app -f build/export/Seamless.ipa --type ios -u <apple-id> -p <app-specific-password>
 > ```
+>
+> 若 `-exportArchive` 报 `method` 无效，把 `appstore/ExportOptions.plist` 里的 `app-store-connect` 改成 `app-store`（旧版 Xcode 的写法）。Release 配置已在本地验证过能编译通过，签名交给 Xcode GUI 最稳。
 
 ## 2. 建 App 记录 **[你]**
 
