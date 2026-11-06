@@ -16,6 +16,6 @@ Handscroll does not collect, store, or send any personal data.
 
 ## Contact
 
-Questions about privacy: open an issue at [github.com/weirui828/seamless/issues](https://github.com/weirui828/seamless/issues).
+Questions about privacy: open an issue at [github.com/weirui828/handscroll/issues](https://github.com/weirui828/handscroll/issues).
 
-Last updated: 3 November 2026
+Last updated: 5 November 2026
