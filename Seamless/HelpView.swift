@@ -289,7 +289,7 @@ private struct HelpChapterView: View {
                 bullets(["Tap the size line to change the output size.",
                          "Tap **Fit** to show the whole photo or fill the frame.",
                          "Save with the download icon; share with the share icon."])
-                paragraph("File names follow the photo name: DSC_0420_01.jpg, DSC_0420_02.jpg.")
+                paragraph("Exported files are named photo_01.jpg, photo_02.jpg…")
             }
         }
     }

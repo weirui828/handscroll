@@ -61,7 +61,7 @@ final class BatchModel {
         var added: [Int] = []
         var taken = Set(photos.map(\.base))
         for item in items.prefix(max(0, room)) {
-            var base = await PhotoNames.originalName(item) ?? "photo"
+            var base = "photo"
             let root = base
             var k = 2
             while taken.contains(base) { base = "\(root)-\(k)"; k += 1 }

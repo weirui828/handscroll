@@ -11,7 +11,7 @@ Handscroll turns one wide photo into slides, a tall crop, or a short pan video.
 ## Common questions
 
 **Where do my files go?**
-Tap the download icon to save to Photos, or the share icon to send them elsewhere. File names follow the photo name, for example `DSC_0420_01.jpg`.
+Tap the download icon to save to Photos, or the share icon to send them elsewhere. Exported files are named `photo_01.jpg`, `photo_02.jpg`, and so on.
 
 **The warning says "Taller than 4:5. It may be cropped when you post."**
 A frame taller than 4:5 (a 3:4 frame, for example) can be cropped by some apps and scheduling tools. 4:5 is the safe ratio. See Help › Basics › The 4:5 warning.

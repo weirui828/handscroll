@@ -70,7 +70,7 @@ final class EditorModel {
             return
         }
         sourceItem = item
-        setPhoto(img, base: await PhotoNames.originalName(item) ?? "photo")
+        setPhoto(img, base: "photo")
         reset()
     }
 
@@ -330,16 +330,6 @@ final class EditorModel {
 }
 
 enum PhotoNames {
-    /// The file name the photo had when it was taken, without its extension.
-    static func originalName(_ item: PhotosPickerItem) async -> String? {
-        guard let id = item.itemIdentifier else { return nil }
-        let access = PHPhotoLibrary.authorizationStatus(for: .readWrite)
-        guard access == .authorized || access == .limited else { return nil }
-        let r = PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil)
-        guard let asset = r.firstObject, let name = PHAssetResource.assetResources(for: asset).first?.originalFilename else { return nil }
-        return (name as NSString).deletingPathExtension
-    }
-
     /// Adds images and videos to Photos. Returns a message for the user.
     static func save(_ urls: [URL]) async -> String {
         guard !urls.isEmpty else { return "No files are ready to save." }

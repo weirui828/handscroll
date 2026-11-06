@@ -183,7 +183,7 @@ To review:
 4. The download button saves to Photos; the share button opens the system share sheet.
 5. The "?" button opens the built-in manual.
 
-Photo library access is used only to pick the source photo (read) and to write exported files (add). The app collects no data and contains no third-party SDKs.
+Photo selection uses the system photo picker, which needs no photo library permission. The app requests add-only Photos access only when saving finished files; it never reads your library. The app collects no data and contains no third-party SDKs.
 ```
 
 ### Screenshots
@@ -256,6 +256,6 @@ shot 06-settings -demoPhoto -demoClean -demoSettings -demoColor
 | 免费账号不能上传 | 当前 Xcode 只有 Personal Team；需要登录付费账号并在 Archive 时选它 |
 | 名称被占 | 备选：`Handscroll — Split Photos`、`Handscroll: Wide Photo`（副标题另算） |
 | 截图路径 | App Store 要求 URL 直接能打开；改名后是 `weiniverse.com/handscroll/...`，不要再引用旧的 `/seamless/` |
-| 相册权限 | 只用于选图（读）和保存导出（写），Info.plist 两段文案已写好 |
+| 相册权限 | 选照片走系统 picker，不需要相册权限；只有保存结果时请求“添加到相册”（Info.plist 里只有 `NSPhotoLibraryAddUsageDescription` 一段） |
 | 4:5 警告 | 文案已中性化，不提第三方平台 |
 | 演示照片版权 | 截图会展示 `demo.jpg`，确认你有权使用，否则换图 |
