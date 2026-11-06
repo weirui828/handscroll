@@ -250,7 +250,8 @@ h2 {
 .strip {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: clamp(14px, 2vw, 24px);
+  gap: clamp(12px, 1.8vw, 22px);
+  max-width: 720px;
 }
 
 @media (max-width: 760px) {
