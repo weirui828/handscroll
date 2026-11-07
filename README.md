@@ -78,7 +78,7 @@ The store screenshots in [`appstore/screenshots/`](appstore/screenshots) were ca
 | --- | --- |
 | `project.yml` | XcodeGen spec — target settings, bundle id, Info.plist keys |
 | `Seamless/` | SwiftUI sources and the asset catalog |
-| `Seamless/EditorModel.swift` | editor state: layout, photo, drift, export steps |
+| `Seamless/EditorModel.swift` | editor state: layout, photo, video, export steps |
 | `Seamless/Geometry.swift` | `Mode`, `Shape`, and the frame maths behind Photo and Video |
 | `Seamless/Renderer.swift`, `DriftEncoder.swift`, `Exporter.swift` | drawing, MP4 encoding, file output |
 | `Seamless/HelpView.swift` | the in-app manual |
