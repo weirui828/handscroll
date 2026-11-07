@@ -397,10 +397,32 @@ struct CanvasView: View {
                             UISelectionFeedbackGenerator().selectionChanged()
                         }
                     }
+                    // VoiceOver gets what the gestures do: slides by swiping, the rest as actions.
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel("Photo preview")
                     .accessibilityValue(model.info)
-                    .accessibilityHint("Use the position controls to adjust the photo.")
+                    .accessibilityHint(isDrift ? "Use the actions to play or pause."
+                                               : "Swipe up or down to change the number of slides. More in the actions.")
+                    .accessibilityAdjustableAction { direction in
+                        guard !isDrift else { return }
+                        switch direction {
+                        case .increment: model.setCount(model.layout.n + 1)
+                        case .decrement: model.setCount(model.layout.n - 1)
+                        @unknown default: break
+                        }
+                    }
+                    .accessibilityActions {
+                        if isDrift {
+                            Button(model.playing ? "Pause" : "Play") { model.togglePlay() }
+                        } else {
+                            if model.layout.n == 1 {
+                                Button("Whole photo or crop") {
+                                    if model.toggleFit(at: CGPoint(x: 0.5, y: 0.5)) { announceFit(haptic: false) }
+                                }
+                            }
+                            Button("Change shape") { cycleShape() }
+                        }
+                    }
                 }
             }
             .clipped()
