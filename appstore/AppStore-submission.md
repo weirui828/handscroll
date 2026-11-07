@@ -106,8 +106,8 @@ Everything is processed on your device. No account, no sign-in, no analytics, no
 Fine details
 • 11 hand-tuned accent colours (Pantone-calibrated), plus a custom colour
 • A 4:5 warning when a frame is taller than most apps and scheduling tools accept
+• Double-tap to switch between the whole photo and a crop
 • Works offline
-• Portrait and landscape
 
 Made for iOS 17 and later.
 ```
@@ -173,7 +173,7 @@ Handscroll is a local, offline photo tool. There is no account, no login, and no
 To review:
 1. Launch the app and tap "Select a Photo". Pick any wide photo (a panorama or a 16:9 photo works best).
 2. The two output choices are Photo and Video.
-3. Photo makes 1–5 slides. At one slide, pinch to fit or crop the photo. Video exports an 8-second pan.
+3. Photo makes 1–5 slides. One slide starts with the whole photo on a blur; pinch in to crop. Video exports an 8-second pan.
 4. The download button saves to Photos; the share button opens the system share sheet.
 5. The "?" button opens the built-in manual.
 
