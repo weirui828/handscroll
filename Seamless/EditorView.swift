@@ -23,12 +23,13 @@ struct EditorView: View {
     @Environment(HingeState.self) private var hinge
 
     /// The folded Duo runs on its outer display. The system puts the bars on the side
-    /// there, so the mode switch floats over the canvas instead of taking a row.
+    /// there, so the output switch floats over the canvas instead of taking a row.
     private var onOuterDisplay: Bool { hinge.openness == .closed }
 
     private var modePicker: some View {
-        Picker("Mode", selection: $model.mode) {
-            ForEach(Mode.allCases) { Text($0.rawValue).tag($0) }
+        Picker("Output", selection: $model.mode) {
+            Text("Photo").tag(Mode.split)
+            Text("Video").tag(Mode.drift)
         }
         .pickerStyle(.segmented)
     }
@@ -235,6 +236,9 @@ struct CanvasView: View {
     @State private var hintPulse = false
     @State private var dragStart: Layout?
     @State private var pinchStart: CGFloat?
+    @State private var fitHapticSent = false
+    @State private var showFitCue = false
+    @State private var fitCueTask: Task<Void, Never>?
     @State private var countStart: Int?
     @State private var shapeStart: CGFloat?
 
@@ -285,11 +289,18 @@ struct CanvasView: View {
                             .accessibilityLabel(model.playing ? "Pause" : "Play")
                         }
                         if !isDrift {
-                            // the dashed cuts run a little past the photo and end in a grip
+                            // An unsplit photo keeps both grips, but has no cut line.
                             Canvas { ctx, size in
                                 let n = max(frame.n, 1)
                                 let top = (size.height - h) / 2       // where the photo starts
                                 let bottom = top + h
+                                if n == 1 {
+                                    for y in [CGFloat(8), size.height - 8] {
+                                        let grip = CGRect(x: size.width / 2 - 9, y: y - 2, width: 18, height: 4)
+                                        ctx.fill(Path(roundedRect: grip, cornerRadius: 2),
+                                                 with: .color(DS.secondary))
+                                    }
+                                }
                                 for i in 1..<n {
                                     let x = size.width * CGFloat(i) / CGFloat(n)
                                     // inside the photo the cut is white
@@ -317,22 +328,20 @@ struct CanvasView: View {
                             .frame(width: w, height: h + 36)
                             .allowsHitTesting(false)
 
-                            // drag the stubs above or below the photo to change the slide count
-                            if frame.n > 1 {
-                                VStack(spacing: 0) {
-                                    dividerBand(w: w, n: frame.n)
-                                    Spacer(minLength: 0)
-                                    dividerBand(w: w, n: frame.n)
-                                }
-                                .frame(width: w, height: h + 36)
+                            // Drag either grip to move between no cuts and 2–5 slides.
+                            VStack(spacing: 0) {
+                                dividerBand(w: w, n: frame.n)
+                                Spacer(minLength: 0)
+                                dividerBand(w: w, n: frame.n)
                             }
+                            .frame(width: w, height: h + 36)
 
                             // both hints sit next to the handle they talk about
-                            if frame.n > 1, !slidesHintDone {
+                            if !slidesHintDone {
                                 hintCapsule("Drag for slides", icon: "arrow.left.and.right") {
                                     slidesHintDone = true
                                 }
-                                .position(x: min(max(photoLeft + w / CGFloat(max(frame.n, 1)), 80), geo.size.width - 80),
+                                .position(x: min(max(photoLeft + w / CGFloat(frame.n == 1 ? 2 : frame.n), 80), geo.size.width - 80),
                                           y: max(24, photoTop - 22))
                             }
                             if !shapeHintDone {
@@ -348,13 +357,31 @@ struct CanvasView: View {
                             // and the bottom-right corner sets the shape
                             cornerHandle(frame: frame, h: h)
                                 .frame(width: w, height: h, alignment: .bottomTrailing)
+
+                            if showFitCue {
+                                Text(pinchStart == nil ? "Fit · whole photo" : "Release to fit")
+                                    .font(.footnote.weight(.semibold))
+                                    .foregroundStyle(DS.text)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 7)
+                                    .background(.regularMaterial, in: Capsule())
+                                    .position(x: photoLeft + w / 2, y: photoTop + h - 32)
+                                    .allowsHitTesting(false)
+                                    .accessibilityHidden(true)
+                            }
                         }
                     }
                     .frame(width: geo.size.width, height: geo.size.height)
                     .contentShape(Rectangle())
                     .gesture(drag(w: w, h: h), including: isDrift ? .none : .all)
                     .simultaneousGesture(pinch, including: isDrift ? .none : .all)
-                    .onTapGesture(count: 2) { if !isDrift { model.resetPosition() } }
+                    .onTapGesture(count: 2) {
+                        if !isDrift {
+                            fitCueTask?.cancel()
+                            showFitCue = false
+                            model.resetPosition()
+                        }
+                    }
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel("Photo preview")
                     .accessibilityValue(model.info)
@@ -382,7 +409,6 @@ struct CanvasView: View {
                             Text(model.sizeText).font(.footnote).foregroundStyle(DS.secondary)
                         } else {
                             SizeControl(model: model)
-                            FrameControl(model: model, style: .menu)
                             if model.leavesGap {
                                 FillControl(model: model)
                             }
@@ -440,7 +466,7 @@ struct CanvasView: View {
                         if countStart == nil { countStart = n }
                         guard let start = countStart else { return }
                         let steps = Int((value.translation.width / 46).rounded())
-                        model.setCount(min(maxSlides, max(2, start + steps)))
+                        model.setCount(min(maxSlides, max(1, start + steps)))
                     }
                     .onEnded { _ in countStart = nil }
             )
@@ -504,10 +530,32 @@ struct CanvasView: View {
     private var pinch: some Gesture {
         MagnifyGesture()
             .onChanged { v in
-                if pinchStart == nil { pinchStart = model.layout.zoom }
+                if pinchStart == nil {
+                    fitCueTask?.cancel()
+                    pinchStart = model.layout.zoom
+                    fitHapticSent = model.isNearFit
+                }
                 if let z = pinchStart { model.setZoom(z * v.magnification) }
+                let nearFit = model.isNearFit
+                if nearFit && !fitHapticSent {
+                    UISelectionFeedbackGenerator().selectionChanged()
+                    fitHapticSent = true
+                }
+                showFitCue = nearFit
             }
-            .onEnded { _ in pinchStart = nil }
+            .onEnded { _ in
+                let snapped = model.snapToFitIfClose()
+                pinchStart = nil
+                showFitCue = snapped
+                if snapped {
+                    UIAccessibility.post(notification: .announcement, argument: "Fit. Whole photo visible.")
+                    fitCueTask = Task {
+                        try? await Task.sleep(for: .seconds(1))
+                        guard !Task.isCancelled else { return }
+                        showFitCue = false
+                    }
+                }
+            }
     }
 }
 
@@ -540,7 +588,7 @@ struct Controls: View {
                 controlRow("Slides") {
                     Picker("Slides", selection: Binding(get: { model.layout.n },
                                                         set: { model.setCount($0) })) {
-                        ForEach(2...maxSlides, id: \.self) { n in Text("\(n)").tag(n) }
+                        ForEach(1...maxSlides, id: \.self) { n in Text("\(n)").tag(n) }
                     }
                     .pickerStyle(.segmented)
                     .fixedSize(horizontal: true, vertical: false)
@@ -555,9 +603,6 @@ struct Controls: View {
             }
             controlRow("Size") {
                 SizeControl(model: model)
-            }
-            controlRow("Frame") {
-                FrameControl(model: model)
             }
             if model.leavesGap {
                 controlRow("Empty") {
@@ -674,42 +719,6 @@ struct SizeControl: View {
             .frame(minHeight: 32)
         }
         .accessibilityLabel("Output size")
-    }
-}
-
-/// Fit/Fill: a menu in the line under the photo, a segment in the pane.
-struct FrameControl: View {
-    enum Style { case menu, segmented }
-
-    @Bindable var model: EditorModel
-    var style: Style = .segmented
-
-    var body: some View {
-        switch style {
-        case .menu:
-            Menu {
-                Button("Fit") { model.wholePhoto() }
-                Button("Fill") { model.fillFrame() }
-            } label: {
-                HStack(spacing: 4) {
-                    Text(model.showsWholePhoto ? "Fit" : "Fill")
-                    Image(systemName: "chevron.up.chevron.down").font(.system(size: 8, weight: .semibold))
-                }
-                .font(.footnote)
-                .foregroundStyle(DS.secondary)
-                .frame(minHeight: 44)
-            }
-            .accessibilityLabel("Frame")
-        case .segmented:
-            Picker("Frame", selection: Binding(get: { model.showsWholePhoto },
-                                               set: { whole in whole ? model.wholePhoto() : model.fillFrame() })) {
-                Text("Fit").tag(true)
-                Text("Fill").tag(false)
-            }
-            .pickerStyle(.segmented)
-            .fixedSize(horizontal: true, vertical: false)
-            .accessibilityLabel("Frame")
-        }
     }
 }
 

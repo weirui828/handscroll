@@ -72,39 +72,33 @@ Handscroll
 ### Subtitle（30 字符内）
 
 ```
-Split wide photos into slides
+One photo, one to five slides
 ```
 
 ### Promotional Text（170 字符内，可随时改）
 
 ```
-One wide photo, a few good ways to post it. Split it into slides, fit it to a tall frame, or turn it into a slow pan — all on device, no account, no analytics.
+One wide photo, a few good ways to post it. Make one image or up to five slides, or turn it into a slow pan — all on device, no account, no analytics.
 ```
 
 ### Description
 
 ```
-One wide photo. Split it into slides, fit it to a tall frame, crop it for the feed, or turn it into a slow pan video — all on your iPhone.
+One wide photo. Make one image, a set of slides, or a slow pan video — all on your iPhone.
 
 Handscroll is a small, quiet photo tool for people who post one wide photo and want it to look right.
 
-SPLIT
-Cut one wide photo into 2–5 slides that line up exactly across a post.
+PHOTO
+Choose 1–5 slides. One slide makes a single image; two to five line up across a post. Pinch to show the whole photo or crop it. Fill empty space with blur, a solid colour, black, or white.
 
-FIT
-Put the whole photo inside a tall 4:5 frame. Fill the empty space with a blur, a solid colour, black, or white.
-
-CROP
-A tall crop with the composition you choose.
-
-DRIFT
+VIDEO
 A slow pan across the photo, exported as an 8-second video.
 
 BATCH
 Apply the same steps to up to 10 photos, then export them all at once.
 
 HELP
-A built-in manual — Basics, Split, Fit, Crop, Drift, Batch, Settings — that explains every control.
+A built-in manual — Basics, Photo, Video, Batch, Settings — that explains every control.
 
 PRIVATE BY DESIGN
 Everything is processed on your device. No account, no sign-in, no analytics, no advertising, no third-party SDKs, and no network access. Photos are reached only through the system picker; finished files are saved to your photo library or shared by you.
@@ -178,8 +172,8 @@ Handscroll is a local, offline photo tool. There is no account, no login, and no
 
 To review:
 1. Launch the app and tap "Select a Photo". Pick any wide photo (a panorama or a 16:9 photo works best).
-2. The four modes are Split, Fit, Crop and Drift.
-3. Split cuts the photo into 2–5 slides; Fit and Crop place it in a tall 4:5 frame; Drift exports an 8-second pan video.
+2. The two output choices are Photo and Video.
+3. Photo makes 1–5 slides. At one slide, pinch to fit or crop the photo. Video exports an 8-second pan.
 4. The download button saves to Photos; the share button opens the system share sheet.
 5. The "?" button opens the built-in manual.
 
@@ -195,7 +189,7 @@ Photo selection uses the system photo picker, which needs no photo library permi
 | iPhone with Dynamic Island (medium display) | 1206 × 2622（6.3"）或 1179 × 2556（6.1"） | `appstore/screenshots-6.3/` | 6 |
 | iPhone Duo | 1398 × 2034（外屏）或 2007 × 2853（内屏） | `appstore/screenshots-duo/` | 6 |
 
-两张表里顺序都是：`01-split`（Split，3 张滑片）、`02-drift`（Drift，播放态）、`03-fit`（Fit，4:5 + Blur）、`04-crop`（Crop，4:5）、`05-help`（Help › Basics）、`06-settings`（11 色 + Custom）。
+两张表里顺序都是：`01-split`（Photo，3 张滑片）、`02-drift`（Video，播放态）、`03-fit`（Photo，1 张 + Blur）、`04-crop`（Photo，1 张裁切）、`05-help`（Help › Basics）、`06-settings`（11 色 + Custom）。提交前需按新界面重拍截图。
 
 - iPad 13"、Apple Watch 槽位对 iPhone-only App 不需要填。
 - `appstore/screenshots/`（1320 × 2868）是旧 6.9" 规格的截图，只用于 README，不用上传。
@@ -263,7 +257,7 @@ OUTER=$(xcrun simctl io "$DUO" enumerate | awk '/Default width: 1398/{print prev
 ## 5. 提交审核 checklist
 
 - [ ] Archive 成功，上传成功，TestFlight 里能看到 build 1
-- [ ] 真机装一个 TestFlight 版本跑一遍：选照片 → Split 导出 → Fit/Crop 导出 → Drift 导出 → Batch
+- [ ] 真机装一个 TestFlight 版本跑一遍：选照片 → Photo 1 张与多张导出 → Video 导出 → Batch
 - [ ] 隐私政策 / 支持 URL 能打开（改名后确认是 `/handscroll/` 路径）
 - [ ] 6.9" 截图上传完整，顺序对
 - [ ] App Privacy 填 **Data Not Collected**

@@ -43,7 +43,15 @@ struct ContentView: View {
             let args = ProcessInfo.processInfo.arguments
             if editor.photo == nil, args.contains("-demoPhoto") { editor.loadDemo() }
             if let i = args.firstIndex(of: "-demoMode"), i + 1 < args.count,
-               let mode = Mode(rawValue: args[i + 1]) { editor.mode = mode }
+               let mode = args[i + 1] == "Video" ? Mode.drift : Mode(rawValue: args[i + 1]) {
+                editor.mode = mode == .drift ? .drift : .split
+                if mode == .fit || mode == .crop {
+                    editor.setCount(1)
+                    if mode == .fit, let geo = editor.geo, let frame = editor.currentFrame {
+                        editor.setZoom(geo.fitZoom(frame))
+                    }
+                }
+            }
             if args.contains("-demoBatch") { showBatch = true }
             if args.contains("-demoPlay") { editor.togglePlay() }
             if args.contains("-demoSettings") { helpOpen = .settings; showHelp = true }

@@ -40,12 +40,12 @@ final class EditorModel {
     init(fix: FixContext) {
         setPhoto(fix.image, base: fix.base)
         let geo = Geometry(W: fix.image.size.width, H: fix.image.size.height)
-        mode = fix.step.type
+        mode = fix.step.type == .drift ? .drift : .split
         outW = fix.step.outW
         if fix.step.type == .drift {
             drift = fix.existing?.drift ?? fix.step.drift
         } else {
-            layouts[fix.step.type] = fix.existing?.layout ?? geo.resolve(fix.step)
+            layouts[.split] = fix.existing?.layout ?? geo.resolve(fix.step)
             look = fix.existing?.look ?? fix.step.look
         }
         rebuildPreview()
@@ -101,33 +101,20 @@ final class EditorModel {
         driftT = 0
         drift = DriftSettings()
         layouts[.split] = Layout(n: geo.bestN, shape: .auto)
-        for m in [Mode.fit, .crop] { layouts[m] = Layout(n: 1, shape: .r45) }
-        layouts[.fit] = refitted(layouts[.fit]!)
         rebuildPreview()
-    }
-
-    /// Fit starts with the whole photo inside the frame.
-    private func refitted(_ l: Layout) -> Layout {
-        guard let geo else { return l }
-        var l = l
-        l.zoom = geo.fitZoom(geo.frame(l, outW: previewPanelWidth))
-        l.ox = 0; l.oy = 0
-        return l
     }
 
     func setShape(_ s: Shape) {
         var l = layout
+        let oldFit = geo.map { $0.fitZoom($0.frame(l, outW: previewPanelWidth)) }
+        let fitScale = oldFit.map { l.zoom / $0 }
         l.shape = s
         l.ox = 0; l.oy = 0
-        l.zoom = 1
-        layouts[mode] = mode == .fit ? refitted(l) : l
+        if l.zoom < 1, let geo, let fitScale {
+            l.zoom = fitScale * geo.fitZoom(geo.frame(l, outW: previewPanelWidth))
+        }
+        layouts[mode] = l
         clampLayout()
-    }
-
-    /// True when the photo is shown whole (zoom == fit), so the Fit segment reads as selected.
-    var showsWholePhoto: Bool {
-        guard let geo, let f = currentFrame else { return false }
-        return abs(layout.zoom - geo.fitZoom(f)) < 0.01
     }
 
     /// True when the photo does not fill the frame, so the fill settings matter.
@@ -136,9 +123,10 @@ final class EditorModel {
         return geo.hasGap(geo.place(layout, f), f)
     }
 
+    /// One output image, or two through five carousel slides.
     func setCount(_ n: Int) {
         var l = layout
-        l.n = n
+        l.n = min(maxSlides, max(1, n))
         l.nPicked = true
         layouts[mode] = l
         clampLayout()
@@ -151,6 +139,24 @@ final class EditorModel {
         clampLayout()
     }
 
+    /// A small magnetic stop at the zoom that shows the whole photo.
+    var isNearFit: Bool {
+        guard mode != .drift, let geo, let f = currentFrame else { return false }
+        return geo.isNearFit(layout, f)
+    }
+
+    @discardableResult
+    func snapToFitIfClose() -> Bool {
+        guard isNearFit, let geo, let f = currentFrame else { return false }
+        var l = layout
+        l.zoom = geo.fitZoom(f)
+        l.ox = 0
+        l.oy = 0
+        layouts[mode] = l
+        clampLayout()
+        return true
+    }
+
     /// Moves by a fraction of the frame.
     func pan(dx: CGFloat, dy: CGFloat, from start: Layout) {
         var l = start
@@ -161,21 +167,6 @@ final class EditorModel {
 
     /// Back to the starting position of the current mode.
     func resetPosition() {
-        var l = layout
-        l.ox = 0; l.oy = 0; l.zoom = 1
-        layouts[mode] = mode == .fit ? refitted(l) : l
-        clampLayout()
-    }
-
-    func wholePhoto() {
-        guard let geo, let f = currentFrame else { return }
-        var l = layout
-        l.ox = 0; l.oy = 0; l.zoom = geo.fitZoom(f)
-        layouts[mode] = l
-        clampLayout()
-    }
-
-    func fillFrame() {
         var l = layout
         l.ox = 0; l.oy = 0; l.zoom = 1
         layouts[mode] = l
@@ -274,10 +265,12 @@ final class EditorModel {
         }
         let f = geo.frame(layout, outW: outW)
         let m = geo.clamped(layout, f)
-        let contain = geo.fitZoom(f)
-        let isFit = mode == .fit
-        return Step(type: mode, shape: m.shape, n: mode == .split ? (m.nPicked ? m.n : nil) : 1,
-                    zoom: ((isFit ? m.zoom / contain : m.zoom) * 1e4).rounded() / 1e4, zoomContain: isFit,
+        // Zoomed out past filling the frame, the zoom is kept relative to the whole-photo
+        // fit, so a fitted photo stays fitted on photos of another shape.
+        let contain = m.zoom < 1
+        let zoom = contain ? m.zoom / geo.fitZoom(f) : m.zoom
+        return Step(type: .split, shape: m.shape, n: m.nPicked ? m.n : nil,
+                    zoom: (zoom * 1e4).rounded() / 1e4, zoomContain: contain,
                     ox: (m.ox * 1e4).rounded() / 1e4, oy: (m.oy * 1e4).rounded() / 1e4,
                     look: look, outW: outW)
     }
@@ -299,7 +292,7 @@ final class EditorModel {
             do {
                 let r = drift
                 let url = try await Task.detached(priority: .userInitiated) {
-                    try await Exporter.drift(photo: photo, drift: r, name: "\(base)_drift", dir: dir) { x in
+                    try await Exporter.drift(photo: photo, drift: r, name: "\(base)_video", dir: dir) { x in
                         Task { @MainActor in self.progress = "Rendering \(Int(x * 100))%…" }
                     }
                 }.value

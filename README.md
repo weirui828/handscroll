@@ -2,7 +2,7 @@
 
 **One wide photo, a few good ways to post it.**
 
-Handscroll is a small iOS app that turns one wide photo into slides, a tall crop, or a short pan video — entirely on your iPhone. No account, no analytics, no network access.
+Handscroll is a small iOS app that turns one wide photo into one image, a set of slides, or a short pan video — entirely on your iPhone. No account, no analytics, no network access.
 
 <p>
   <img src="appstore/screenshots/01-split.png" width="23%">
@@ -13,12 +13,10 @@ Handscroll is a small iOS app that turns one wide photo into slides, a tall crop
 
 ## What it does
 
-- **Split** — cut one wide photo into 2–5 slides that line up exactly across a post.
-- **Fit** — put the whole photo inside a tall 4:5 frame, with the empty space filled by a blur, a solid colour, black or white.
-- **Crop** — a tall crop with the composition you choose.
-- **Drift** — a slow pan across the photo, exported as an 8-second MP4.
+- **Photo** — choose 1–5 slides. At one slide, pinch to fit the whole photo or crop it. When empty space appears, fill it with blur, black, white, or a colour.
+- **Video** — a slow pan across the photo, exported as an 8-second MP4.
 - **Batch** — apply the same steps to up to 10 photos and export them all at once.
-- **Help** — a built-in manual (Basics, Split, Fit, Crop, Drift, Batch, Settings) that explains every control.
+- **Help** — a built-in manual (Basics, Photo, Video, Batch, Settings) that explains every control.
 - **Palette** — 11 hand-tuned accent colours (Pantone-calibrated), plus a custom colour.
 - A 4:5 warning when a frame is taller than most apps and scheduling tools will accept.
 
@@ -60,10 +58,10 @@ xcrun simctl launch booted com.weiniverse.handscroll \
 | Argument | Effect |
 | --- | --- |
 | `-demoPhoto` | load the bundled `demo.jpg` instead of the photo picker |
-| `-demoMode <Split\|Fit\|Crop\|Drift>` | start in that mode |
-| `-demoSlides <2–5>` | set the number of slides |
+| `-demoMode <Split\|Fit\|Crop\|Drift\|Video>` | start in that layout (Fit and Crop open Photo with one slide; Drift and Video open Video) |
+| `-demoSlides <1–5>` | set the number of slides |
 | `-demoShape <Auto\|4:5\|3:4\|1:1>` | set the frame shape |
-| `-demoPlay` | start the Drift preview playing |
+| `-demoPlay` | start the Video preview playing |
 | `-demoBatch` | open the Batch screen |
 | `-demoHelp`, `-demoBasics`, `-demoTopic <topic>` | open the manual |
 | `-demoSettings` | open Help › Settings |
@@ -81,7 +79,7 @@ The store screenshots in [`appstore/screenshots/`](appstore/screenshots) were ca
 | `project.yml` | XcodeGen spec — target settings, bundle id, Info.plist keys |
 | `Seamless/` | SwiftUI sources and the asset catalog |
 | `Seamless/EditorModel.swift` | editor state: layout, photo, drift, export steps |
-| `Seamless/Geometry.swift` | `Mode`, `Shape`, and the frame maths behind Split/Fit/Crop |
+| `Seamless/Geometry.swift` | `Mode`, `Shape`, and the frame maths behind Photo and Video |
 | `Seamless/Renderer.swift`, `DriftEncoder.swift`, `Exporter.swift` | drawing, MP4 encoding, file output |
 | `Seamless/HelpView.swift` | the in-app manual |
 | `docs/` | the GitHub Pages site: product page, privacy policy, support, and the browser version at `docs/tool/` |

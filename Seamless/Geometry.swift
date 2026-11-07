@@ -10,7 +10,7 @@ let maxPixels: CGFloat = 24e6    // keeps the phone within its memory limits
 let thumbPixels: CGFloat = 2e6   // batch previews only need a small copy
 let maxSteps = 5
 let maxPhotos = 10
-let maxSlides = 5     // the slide chips only offer 2...5; fewer slides read better
+let maxSlides = 5     // one image or up to five carousel slides
 let driftSize = CGSize(width: 1080, height: 1920)
 let driftFPS = 30
 
@@ -21,7 +21,8 @@ func fitsTwoPanes(width: CGFloat, height: CGFloat, minWidth: CGFloat = 520) -> B
 }
 
 enum Mode: String, CaseIterable, Identifiable, Codable {
-    case split = "Split", fit = "Fit", crop = "Crop", drift = "Drift"
+    // Fit and Crop remain decodable for batches saved before Photo unified the editor.
+    case split = "Split", fit = "Fit", crop = "Crop", drift = "Drift"   // shown as Video; the stored value stays for saved batches
     var id: String { rawValue }
 
     // Batches saved before the rename still hold "Carousel" and "Reel".
@@ -92,7 +93,7 @@ struct Layout: Codable, Equatable {
 }
 
 /// A step records one mode's settings. Zoom and position are relative, so they carry over to
-/// other photos; the Split mode's slide count is nil (auto) unless a count was picked on purpose.
+/// other photos; Photo's slide count is nil (auto) unless a count was picked on purpose.
 struct Step: Codable, Identifiable, Equatable {
     var id = UUID().uuidString
     var type = Mode.split
@@ -121,14 +122,12 @@ struct Step: Codable, Identifiable, Equatable {
     var label: String {
         if type == .drift {
             let dir = drift.p1 > drift.p0 ? "left to right" : drift.p1 < drift.p0 ? "right to left" : "still"
-            return "Drift · \(Int(drift.dur)) s, \(dir)"
+            return "Video · \(Int(drift.dur)) s, \(dir)"
         }
         let s = shape == .auto ? "Auto" : shape.rawValue
-        switch type {
-        case .split: return "Split · \(s)" + (n.map { " · \($0) slides" } ?? "")
-        case .fit: return "Fit · \(s) · \(look.fill == .color ? look.colorHex : look.fill.rawValue.lowercased())"
-        default: return "Crop · \(s)"
-        }
+        let count = type == .split ? n : 1
+        return (count == 1 ? "Photo" : "Slides") + " · \(s)" +
+            (count.flatMap { $0 > 1 ? " · \($0) slides" : nil } ?? "")
     }
 }
 
@@ -169,6 +168,7 @@ struct Geometry {
 
     func panelAspect(_ m: Layout) -> CGFloat {
         if let a = m.shape.aspect { return a }
+        if m.n == 1 { return safeAspect }
         return clamp(W / (H * CGFloat(m.n)), minAspect, maxAspect)
     }
 
@@ -181,6 +181,7 @@ struct Geometry {
     func containK(_ f: Frame) -> CGFloat { min(f.fw / W, f.fh / H) }
     func zoomRange(_ f: Frame) -> ClosedRange<CGFloat> { (0.5 * containK(f) / coverK(f))...5 }
     func fitZoom(_ f: Frame) -> CGFloat { containK(f) / coverK(f) }
+    func isNearFit(_ m: Layout, _ f: Frame) -> Bool { abs(m.zoom / fitZoom(f) - 1) <= 0.10 }
 
     func place(_ m: Layout, _ f: Frame) -> Placement {
         let k = coverK(f) * m.zoom

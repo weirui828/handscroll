@@ -201,7 +201,7 @@ final class BatchModel {
                     if step.type == .drift {
                         let r = s.drift, base = p.base, count = min(done + 1, total), all = total
                         let url = try await Task.detached(priority: .userInitiated) {
-                            try await Exporter.drift(photo: full, drift: r, name: "\(base)_\(si + 1)-drift", dir: dir) { x in
+                            try await Exporter.drift(photo: full, drift: r, name: "\(base)_\(si + 1)-video", dir: dir) { x in
                                 Task { @MainActor in self.progress = "Exporting \(count) of \(all) · \(Int(x * 100))%" }
                             }
                         }.value

@@ -3,10 +3,8 @@ import SwiftUI
 /// One chapter of Help, listed in this order on the home screen.
 enum HelpTopic: String, CaseIterable, Identifiable {
     case basics = "Basics"
-    case split = "Split"
-    case fit = "Fit"
-    case crop = "Crop"
-    case drift = "Drift"
+    case photo = "Photo"
+    case drift = "Video"
     case batch = "Batch"
     case settings = "Settings"
 
@@ -16,9 +14,7 @@ enum HelpTopic: String, CaseIterable, Identifiable {
     var summary: String {
         switch self {
         case .basics: "Move, zoom, shape, fill and export"
-        case .split: "Cut one wide photo into slides"
-        case .fit: "The whole photo on a tall frame"
-        case .crop: "A tall crop for the feed"
+        case .photo: "One image or up to five slides"
         case .drift: "A slow pan as a short video"
         case .batch: "The same steps on up to 10 photos"
         case .settings: "Accent colour and gesture hints"
@@ -28,9 +24,7 @@ enum HelpTopic: String, CaseIterable, Identifiable {
     var symbol: String {
         switch self {
         case .basics: "hand.draw"
-        case .split: "rectangle.split.3x1"
-        case .fit: "rectangle"
-        case .crop: "crop"
+        case .photo: "rectangle.split.3x1"
         case .drift: "play.rectangle"
         case .batch: "rectangle.stack"
         case .settings: "slider.horizontal.3"
@@ -40,9 +34,7 @@ enum HelpTopic: String, CaseIterable, Identifiable {
     /// The editor mode a chapter is about, when it has one.
     var mode: Mode? {
         switch self {
-        case .split: .split
-        case .fit: .fit
-        case .crop: .crop
+        case .photo: .split
         case .drift: .drift
         default: nil
         }
@@ -251,9 +243,7 @@ private struct HelpChapterView: View {
     private var content: some View {
         switch topic {
         case .basics: basics
-        case .split: split
-        case .fit: fit
-        case .crop: crop
+        case .photo: photo
         case .drift: drift
         case .batch: batch
         case .settings: EmptyView()
@@ -262,7 +252,7 @@ private struct HelpChapterView: View {
 
     private var basics: some View {
         VStack(alignment: .leading, spacing: 20) {
-            paragraph("Split, Fit and Crop start from one photo and end in image files. This chapter is the part they share.")
+            paragraph("Photo makes one image or a set of slides. Video makes a slow pan across the photo.")
 
             section("Move and zoom") {
                 bullets(["Drag the photo to move it.",
@@ -287,48 +277,32 @@ private struct HelpChapterView: View {
 
             section("Size and export") {
                 bullets(["Tap the size line to change the output size.",
-                         "Tap **Fit** to show the whole photo or fill the frame.",
                          "Save with the download icon; share with the share icon."])
                 paragraph("Exported files are named photo_01.jpg, photo_02.jpg…")
             }
         }
     }
 
-    private var split: some View {
+    private var photo: some View {
         VStack(alignment: .leading, spacing: 20) {
-            paragraph("Split cuts one wide photo into slides. Swiped in order, they read as one picture.")
+            paragraph("Choose 1–5 slides. One slide makes a single image; two to five make a set that lines up across a post.")
             HelpDiagram(kind: .slides)
-            section("Add or remove slides") {
-                steps(["Find the dashed line that runs past the top and bottom of the photo.",
-                       "Drag the small handle right to add a slide, left to remove one.",
-                       "Two to five slides."])
+            section("Choose the number of slides") {
+                steps(["Drag either small handle right to add slides, or left to remove them.",
+                       "At one slide, both handles stay centered and the dashed line disappears.",
+                       "Pinch out to show the whole photo, or pinch in to crop it."])
                 paragraph("The line under the photo shows the size of each slide.")
             }
-        }
-    }
-
-    private var fit: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            paragraph("Fit puts the whole photo on a tall frame, so it takes more of the feed.")
-            HelpDiagram(kind: .fit)
-            paragraph("Tap the corner at the bottom right to choose a shape, or drag it. A little zoom out leaves a margin on all sides.")
-        }
-    }
-
-    private var crop: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            paragraph("Crop makes a tall version of the photo to post. Keep the full photo for your website.")
-            HelpDiagram(kind: .crop)
-            section("Choose the part") {
-                steps(["Tap the corner at the bottom right to choose a shape.",
-                       "Drag and pinch until the frame shows what you want."])
+            section("Frame the image") {
+                paragraph("Tap or drag the bottom-right corner to choose a shape. Drag the photo to move it. If zooming out leaves empty space, choose Blur, Black, White or Color for the background.")
+                paragraph("When a pinch gets close to showing the whole photo, the Fit cue appears. Release to snap the photo into place.")
             }
         }
     }
 
     private var drift: some View {
         VStack(alignment: .leading, spacing: 20) {
-            paragraph("Drift makes a short video that moves slowly across the photo.")
+            paragraph("Video makes a short clip that moves slowly across the photo.")
             HelpDiagram(kind: .pan)
             section("Play") {
                 paragraph("Tap the play button in the middle of the photo. A thin bar at the bottom shows the position; tap again to pause.")
@@ -354,7 +328,7 @@ private struct HelpChapterView: View {
             paragraph("Batch applies the same steps to up to 10 photos.")
             HelpDiagram(kind: .batch)
             section("Add a step") {
-                steps(["Open a photo in Split, Fit, Crop or Drift and set it up.",
+                steps(["Open a photo in Photo or Video and set it up.",
                        "Tap the plus icon in the bar below the photo.",
                        "Change the settings and tap plus again. Up to 5 steps."])
             }
@@ -434,8 +408,8 @@ private struct HelpChapterView: View {
 
     private var relatedTopics: [HelpTopic] {
         switch topic {
-        case .basics: [.split, .fit, .crop, .drift]
-        case .split, .fit, .crop, .drift: [.basics]
+        case .basics: [.photo, .drift]
+        case .photo, .drift: [.basics]
         case .batch: [.basics]
         case .settings: []
         }
@@ -574,7 +548,7 @@ private struct HelpSettings: View {
 // MARK: - Diagrams
 
 private struct HelpDiagram: View {
-    enum Kind { case slides, corner, fit, crop, pan, batch }
+    enum Kind { case slides, corner, pan, batch }
     let kind: Kind
 
     private var photo: LinearGradient {
@@ -586,8 +560,6 @@ private struct HelpDiagram: View {
         switch kind {
         case .slides: slides
         case .corner: corner
-        case .fit: fit
-        case .crop: crop
         case .pan: pan
         case .batch: batch
         }
@@ -648,29 +620,6 @@ private struct HelpDiagram: View {
         .overlay(RoundedRectangle(cornerRadius: 10).stroke(DS.stroke, lineWidth: 1))
     }
 
-    private var fit: some View {
-        HStack(spacing: 14) {
-            diagramFrame("Fit") {
-                RoundedRectangle(cornerRadius: 4).fill(photo)
-                    .frame(width: 46, height: 74)
-            }
-            diagramFrame("Fill") {
-                RoundedRectangle(cornerRadius: 4).fill(photo)
-            }
-        }
-    }
-
-    private var crop: some View {
-        diagramFrame("3:4") {
-            RoundedRectangle(cornerRadius: 4).fill(photo)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 4)
-                        .stroke(.white.opacity(0.9), style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
-                        .padding(6)
-                }
-        }
-    }
-
     private var pan: some View {
         VStack(spacing: 10) {
             RoundedRectangle(cornerRadius: 10).fill(photo)
@@ -713,17 +662,4 @@ private struct HelpDiagram: View {
         }
     }
 
-    private func diagramFrame<Content: View>(_ label: String, @ViewBuilder _ content: () -> Content) -> some View {
-        VStack(spacing: 8) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 6).fill(DS.bg)
-                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(DS.stroke, lineWidth: 1))
-                content()
-            }
-            .frame(height: 100)
-            .frame(maxWidth: .infinity)
-            Text(label).font(.caption2).foregroundStyle(DS.secondary)
-        }
-        .frame(maxWidth: .infinity)
-    }
 }
