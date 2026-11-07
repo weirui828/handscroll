@@ -13,7 +13,7 @@ Handscroll is a small iOS app that turns one wide photo into one image, a set of
 
 ## What it does
 
-- **Photo** — choose 1–5 slides. One slide starts with the whole photo on a blur; pinch in to crop. Empty space can be blur, black, white, or a colour.
+- **Photo** — choose 1–5 slides. One slide starts with the whole photo on a blur; double-tap or spread two fingers to crop. Empty space can be blur, black, white, or a colour.
 - **Video** — a slow pan across the photo, exported as an 8-second MP4.
 - **Batch** — apply the same steps to up to 10 photos and export them all at once.
 - **Help** — a built-in manual (Basics, Photo, Video, Batch, Settings) that explains every control.

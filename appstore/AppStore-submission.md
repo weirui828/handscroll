@@ -173,7 +173,7 @@ Handscroll is a local, offline photo tool. There is no account, no login, and no
 To review:
 1. Launch the app and tap "Select a Photo". Pick any wide photo (a panorama or a 16:9 photo works best).
 2. The two output choices are Photo and Video.
-3. Photo makes 1–5 slides. One slide starts with the whole photo on a blur; pinch in to crop. Video exports an 8-second pan.
+3. Photo makes 1–5 slides. One slide starts with the whole photo on a blur; double-tap or spread two fingers to crop. Video exports an 8-second pan.
 4. The download button saves to Photos; the share button opens the system share sheet.
 5. The "?" button opens the built-in manual.
 

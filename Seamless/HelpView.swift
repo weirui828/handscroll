@@ -214,7 +214,7 @@ private struct HelpChapterView: View {
             }
 
             section("Empty space") {
-                paragraph("If the photo does not fill the frame, choose a fill: **Blur**, **Black**, **White** or **Color**.")
+                paragraph("If the photo does not fill the frame, tap **Blur** under the photo and pick a swatch: blur, black, white, a colour, or your own.")
                 paragraph("With **Blur**, the **Darken** slider makes the fill darker.")
             }
 
@@ -231,9 +231,9 @@ private struct HelpChapterView: View {
             paragraph("Choose 1–5 slides. One slide makes a single image; two to five make a set that lines up across a post.")
             HelpDiagram(kind: .slides)
             section("Choose the number of slides") {
-                steps(["Drag either small handle right to add slides, or left to remove them.",
-                       "At one slide, both handles stay centered and the dashed line disappears.",
-                       "One slide starts with the whole photo on a blur. Pinch in to crop it."])
+                steps(["Turn either dial right to add slides, or left to remove them.",
+                       "At one slide, the dials stay centered and the dashed line disappears.",
+                       "One slide starts with the whole photo on a blur. Double-tap to switch between the whole photo and a crop around the spot you tap, or spread two fingers to crop."])
                 paragraph("The line under the photo shows the size of each slide.")
             }
             section("Frame the image") {
@@ -454,6 +454,25 @@ private struct HelpSettings: View {
 
 // MARK: - Diagrams
 
+/// A small copy of the editor's slide dial for the diagrams: shaded body, vertical ridges.
+private struct HelpDial: View {
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 2.5)
+                .fill(LinearGradient(colors: [DS.secondary.opacity(0.75), DS.secondary.opacity(0.35),
+                                              DS.secondary.opacity(0.75)],
+                                     startPoint: .leading, endPoint: .trailing))
+            RoundedRectangle(cornerRadius: 2.5).stroke(DS.secondary.opacity(0.8), lineWidth: 0.5)
+            HStack(spacing: 2.2) {
+                ForEach(0..<6, id: \.self) { _ in
+                    Rectangle().fill(DS.secondary).frame(width: 0.8, height: 4)
+                }
+            }
+        }
+        .frame(width: 22, height: 8)
+    }
+}
+
 private struct HelpDiagram: View {
     enum Kind { case slides, corner, pan, batch }
     let kind: Kind
@@ -484,11 +503,8 @@ private struct HelpDiagram: View {
                         path.addLine(to: CGPoint(x: x, y: h - 10))
                     }
                     .stroke(.white.opacity(0.9), style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
-                    ForEach([CGFloat(4), h - 4], id: \.self) { y in
-                        Capsule()
-                            .fill(DS.secondary)
-                            .frame(width: 16, height: 3)
-                            .position(x: w * CGFloat(i) / 3, y: y)
+                    ForEach([CGFloat(7), h - 7], id: \.self) { y in
+                        HelpDial().position(x: w * CGFloat(i) / 3, y: y)
                     }
                 }
             }
