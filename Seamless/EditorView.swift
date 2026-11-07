@@ -2,8 +2,8 @@ import SwiftUI
 import PhotosUI
 import UIKit
 
-/// The canvas above, the controls below. The app runs in portrait only, so this is
-/// the one layout (plus the folded Duo's outer display, where the mode switch floats).
+/// The Photo/Video switch on top, the canvas, then the controls. The app runs in
+/// portrait only, so this is the one layout, on every iPhone and the folded Duo.
 struct EditorView: View {
     @Bindable var model: EditorModel
     var batch: BatchModel?              // nil while adjusting one batch photo
@@ -19,11 +19,6 @@ struct EditorView: View {
     @State private var showResult = false
     @State private var note: String?
     @State private var noteTask: Task<Void, Never>?
-    @Environment(HingeState.self) private var hinge
-
-    /// The folded Duo runs on its outer display. The system puts the bars on the side
-    /// there, so the output switch floats over the canvas instead of taking a row.
-    private var onOuterDisplay: Bool { hinge.openness == .closed }
 
     private var modePicker: some View {
         Picker("Output", selection: $model.mode) {
@@ -78,7 +73,8 @@ struct EditorView: View {
             let header = VStack(spacing: 0) {
                 modePicker
                     .padding(.horizontal, 12)
-                    .padding(.top, 10)
+                    // No status bar above it (the folded Duo keeps it at the side): clear the rounded corner.
+                    .padding(.top, geo.safeAreaInsets.top < 20 ? 24 : 10)
                     .padding(.bottom, 6)
                 Divider().overlay(DS.stroke)
             }
@@ -94,32 +90,14 @@ struct EditorView: View {
             .scrollBounceBehavior(.basedOnSize)
             .onPreferenceChange(ControlsHeightKey.self) { controlsHeight = $0 }
 
-            if onOuterDisplay {
-                // Folded: the system puts its bars on the side, so the mode switch
-                // floats over the canvas and the photo keeps the full height.
-                VStack(spacing: 0) {
-                    ZStack(alignment: .bottom) {
-                        CanvasView(model: model, onExplain: onExplain, bottomInset: 84)
-                        modePicker
-                            .padding(6)
-                            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
-                            .padding(.horizontal, 20)
-                            .padding(.bottom, 60)
-                    }
+            // Every iPhone, the folded Duo included: the Photo/Video switch on top.
+            VStack(spacing: 0) {
+                header
+                CanvasView(model: model, onExplain: onExplain)
                     .frame(maxHeight: .infinity)
-                    Divider().overlay(DS.stroke)
-                    controls
-                        .frame(height: min(max(controlsHeight, 0), geo.size.height * (compact ? 0.45 : 0.55)))
-                }
-            } else {
-                VStack(spacing: 0) {
-                    header
-                    CanvasView(model: model, onExplain: onExplain)
-                        .frame(maxHeight: .infinity)
-                    Divider().overlay(DS.stroke)
-                    controls
-                        .frame(height: min(max(controlsHeight, 0), geo.size.height * (compact ? 0.45 : 0.55)))
-                }
+                Divider().overlay(DS.stroke)
+                controls
+                    .frame(height: min(max(controlsHeight, 0), geo.size.height * (compact ? 0.45 : 0.55)))
             }
         }
         .background(DS.bg)

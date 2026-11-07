@@ -252,7 +252,7 @@ OUTER=$(xcrun simctl io "$DUO" enumerate | awk '/Default width: 1398/{print prev
 #   xcrun simctl io "$DUO" screenshot --display="$OUTER" appstore/screenshots-duo/<name>.png
 ```
 
-注意：模拟器上 App 真正画出来要 10–15 秒，`sleep 5` 会截到白屏；拍照前也可以把 `Seamless/demo.jpg` 换成自己的照片（宽图最佳）。
+注意：模拟器上 App 真正画出来要 10–15 秒，`sleep 5` 会截到白屏；Duo 外屏上的 Help（`-demoBasics`）要等 20 秒以上；拍照前也可以把 `Seamless/demo.jpg` 换成自己的照片（宽图最佳）。
 
 ## 5. 提交审核 checklist
 
