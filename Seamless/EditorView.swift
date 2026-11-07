@@ -262,6 +262,8 @@ struct CanvasView: View {
                             .accessibilityLabel(model.playing ? "Pause" : "Play")
                         }
                         if !isDrift {
+                            // Read the state here: the Canvas closure runs off the main actor.
+                            let phase = dialPhase
                             // An unsplit photo keeps both grips, but has no cut line.
                             Canvas { ctx, size in
                                 let n = max(frame.n, 1)
@@ -282,7 +284,7 @@ struct CanvasView: View {
 
                                     let radius = r.width / 2 - 2
                                     let spacing = CGFloat.pi / 8
-                                    let offset = dialPhase.truncatingRemainder(dividingBy: spacing)
+                                    let offset = phase.truncatingRemainder(dividingBy: spacing)
                                     for k in -9...9 {
                                         let angle = offset + CGFloat(k) * spacing
                                         guard abs(angle) < .pi / 2 * 0.92 else { continue }
