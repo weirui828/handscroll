@@ -2,9 +2,8 @@ import SwiftUI
 import PhotosUI
 import UIKit
 
-/// The canvas and the controls sit in two separate panes. A wide, clearly landscape
-/// window puts them side by side; anything narrower stacks the canvas above the
-/// controls, so the photo never has to share a row with the inspector.
+/// The canvas above, the controls below. The app runs in portrait only, so this is
+/// the one layout (plus the folded Duo's outer display, where the mode switch floats).
 struct EditorView: View {
     @Bindable var model: EditorModel
     var batch: BatchModel?              // nil while adjusting one batch photo
@@ -74,22 +73,19 @@ struct EditorView: View {
 
     var body: some View {
         GeometryReader { geo in
-            let sideBySide = !onOuterDisplay && fitsTwoPanes(width: geo.size.width, height: geo.size.height)
-            let compact = !sideBySide && geo.size.height < 620
-            let controlsWidth = min(400, geo.size.width * 0.42)
+            let compact = geo.size.height < 620
 
             let header = VStack(spacing: 0) {
                 modePicker
                     .padding(.horizontal, 12)
-                    .padding(.top, sideBySide ? 44 : 10)
+                    .padding(.top, 10)
                     .padding(.bottom, 6)
                 Divider().overlay(DS.stroke)
             }
             .background(DS.bar)
 
             let controls = ScrollView {
-                Controls(model: model, compact: compact, accent: accent,
-                         roomy: sideBySide, onExplain: onExplain)
+                Controls(model: model, compact: compact, accent: accent, onExplain: onExplain)
                     .padding(12)
                     .background(GeometryReader { proxy in
                         Color.clear.preference(key: ControlsHeightKey.self, value: proxy.size.height)
@@ -98,16 +94,7 @@ struct EditorView: View {
             .scrollBounceBehavior(.basedOnSize)
             .onPreferenceChange(ControlsHeightKey.self) { controlsHeight = $0 }
 
-            if sideBySide {
-                HStack(spacing: 0) {
-                    CanvasView(model: model, inset: 20, onExplain: onExplain,
-                               showsInfoRow: model.mode == .drift)
-                    Divider().overlay(DS.stroke)
-                    VStack(spacing: 0) { header; controls }
-                        .frame(width: controlsWidth)
-                        .background(DS.bg)
-                }
-            } else if onOuterDisplay {
+            if onOuterDisplay {
                 // Folded: the system puts its bars on the side, so the mode switch
                 // floats over the canvas and the photo keeps the full height.
                 VStack(spacing: 0) {
@@ -223,16 +210,21 @@ struct EditorView: View {
     }
 }
 
+/// The slide grips: how far they sit past the photo edge, their size, and the band
+/// above and below the photo that holds them.
+private let gripGap: CGFloat = 18
+private let gripSize = CGSize(width: 28, height: 10)
+private let gripBand: CGFloat = gripGap + 12
+
 struct CanvasView: View {
     @Bindable var model: EditorModel
-    var inset: CGFloat = 0
     var onExplain: (() -> Void)? = nil
-    var showsInfoRow = true
     /// Room under the photo, so a control floating above it (the mode switch on the
     /// folded Duo) never sits on the slide grip.
     var bottomInset: CGFloat = 0
     @AppStorage("seamless.hint.slides") private var slidesHintDone = false
     @AppStorage("seamless.hint.shape") private var shapeHintDone = false
+    @AppStorage("seamless.hint.doubletap") private var doubleTapHintDone = false
     @State private var hintPulse = false
     @State private var dragStart: Layout?
     @State private var pinchStart: CGFloat?
@@ -240,6 +232,9 @@ struct CanvasView: View {
     @State private var showFitCue = false
     @State private var fitCueTask: Task<Void, Never>?
     @State private var countStart: Int?
+    /// How far the slide dials have turned, in radians; dragging rolls their ridges.
+    @State private var dialPhase: CGFloat = 0
+    @State private var dialPhaseStart: CGFloat?
     @State private var shapeStart: CGFloat?
 
     var body: some View {
@@ -249,8 +244,8 @@ struct CanvasView: View {
                     let isDrift = model.mode == .drift
                     let aw = isDrift ? driftSize.width : frame.fw
                     let ah = isDrift ? driftSize.height : frame.fh
-                    // the grips sit 10 pt past the photo edges, so leave that much room
-                    let verticalMargin: CGFloat = isDrift ? 12 : 44
+                    // the grips sit gripGap pt past the photo edges, so leave room for them
+                    let verticalMargin: CGFloat = isDrift ? 12 : 2 * gripBand + 8
                     let fit = max(0.001, min(max(1, geo.size.width - 24) / aw, max(1, geo.size.height - verticalMargin) / ah))
                     let w = aw * fit, h = ah * fit
                     let photoTop = (geo.size.height - h) / 2
@@ -294,12 +289,37 @@ struct CanvasView: View {
                                 let n = max(frame.n, 1)
                                 let top = (size.height - h) / 2       // where the photo starts
                                 let bottom = top + h
-                                if n == 1 {
-                                    for y in [CGFloat(8), size.height - 8] {
-                                        let grip = CGRect(x: size.width / 2 - 9, y: y - 2, width: 18, height: 4)
-                                        ctx.fill(Path(roundedRect: grip, cornerRadius: 2),
-                                                 with: .color(DS.secondary))
+                                let gripTop = top - gripGap, gripBottom = bottom + gripGap
+                                // A small crown-like wheel seen from the side: ridges bunch up
+                                // toward its edges and roll past as it turns.
+                                func grip(at x: CGFloat, _ y: CGFloat) {
+                                    let r = CGRect(x: x - gripSize.width / 2, y: y - gripSize.height / 2,
+                                                   width: gripSize.width, height: gripSize.height)
+                                    let body = Path(roundedRect: r, cornerRadius: 3)
+                                    ctx.fill(body, with: .linearGradient(
+                                        Gradient(colors: [DS.secondary.opacity(0.55), DS.secondary.opacity(0.18),
+                                                          DS.secondary.opacity(0.55)]),
+                                        startPoint: CGPoint(x: r.minX, y: y), endPoint: CGPoint(x: r.maxX, y: y)))
+                                    ctx.stroke(body, with: .color(DS.secondary.opacity(0.7)), lineWidth: 0.75)
+
+                                    let radius = r.width / 2 - 2
+                                    let spacing = CGFloat.pi / 8
+                                    let offset = dialPhase.truncatingRemainder(dividingBy: spacing)
+                                    for k in -9...9 {
+                                        let angle = offset + CGFloat(k) * spacing
+                                        guard abs(angle) < .pi / 2 * 0.92 else { continue }
+                                        let facing = cos(angle)               // 1 at the front, 0 at the edge
+                                        let rx = x + radius * sin(angle)
+                                        var ridge = Path()
+                                        ridge.move(to: CGPoint(x: rx, y: r.minY + 2.5))
+                                        ridge.addLine(to: CGPoint(x: rx, y: r.maxY - 2.5))
+                                        ctx.stroke(ridge, with: .color(DS.secondary.opacity(0.35 + 0.6 * facing)),
+                                                   lineWidth: 0.5 + 0.7 * facing)
                                     }
+                                }
+                                if n == 1 {
+                                    grip(at: size.width / 2, gripTop)
+                                    grip(at: size.width / 2, gripBottom)
                                 }
                                 for i in 1..<n {
                                     let x = size.width * CGFloat(i) / CGFloat(n)
@@ -311,21 +331,18 @@ struct CanvasView: View {
                                                style: StrokeStyle(lineWidth: 1, dash: [6, 4]))
 
                                     // outside it sits on paper, so it turns ink
-                                    for range in [(CGFloat(8), top - 2), (bottom + 2, size.height - 8)] {
+                                    for range in [(gripTop, top - 2), (bottom + 2, gripBottom)] {
                                         var outside = Path()
                                         outside.move(to: CGPoint(x: x, y: range.0))
                                         outside.addLine(to: CGPoint(x: x, y: range.1))
                                         ctx.stroke(outside, with: .color(DS.secondary.opacity(0.6)),
                                                    style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
 
-                                        let y = range.0 < top ? range.0 : range.1
-                                        let grip = CGRect(x: x - 9, y: y - 2, width: 18, height: 4)
-                                        ctx.fill(Path(roundedRect: grip, cornerRadius: 2),
-                                                 with: .color(DS.secondary))
+                                        grip(at: x, range.0 < top ? range.0 : range.1)
                                     }
                                 }
                             }
-                            .frame(width: w, height: h + 36)
+                            .frame(width: w, height: h + 2 * gripBand)
                             .allowsHitTesting(false)
 
                             // Drag either grip to move between no cuts and 2–5 slides.
@@ -334,7 +351,7 @@ struct CanvasView: View {
                                 Spacer(minLength: 0)
                                 dividerBand(w: w, n: frame.n)
                             }
-                            .frame(width: w, height: h + 36)
+                            .frame(width: w, height: h + 2 * gripBand)
 
                             // both hints sit next to the handle they talk about
                             if !slidesHintDone {
@@ -342,16 +359,23 @@ struct CanvasView: View {
                                     slidesHintDone = true
                                 }
                                 .position(x: min(max(photoLeft + w / CGFloat(frame.n == 1 ? 2 : frame.n), 80), geo.size.width - 80),
-                                          y: max(24, photoTop - 22))
+                                          y: max(24, photoTop - gripGap - 16))
                             }
                             if !shapeHintDone {
                                 hintCapsule("Drag for shape", icon: "arrow.up.left.and.arrow.down.right") {
                                     shapeHintDone = true
                                 }
                                 .position(x: min(max(photoLeft + w - 92, 92), geo.size.width - 92),
-                                          y: photoTop + h + 26 <= geo.size.height - 46
-                                            ? photoTop + h + 26
+                                          y: photoTop + h + gripGap + 16 <= geo.size.height - 46
+                                            ? photoTop + h + gripGap + 16
                                             : photoTop + h - 64)
+                            }
+                            // one image only: that is where double-tap switches fit and crop
+                            if frame.n == 1, !doubleTapHintDone {
+                                hintCapsule("Double-tap: fit or crop", icon: "hand.tap") {
+                                    doubleTapHintDone = true
+                                }
+                                .position(x: photoLeft + w / 2, y: photoTop + h / 2)
                             }
 
                             // and the bottom-right corner sets the shape
@@ -375,11 +399,22 @@ struct CanvasView: View {
                     .contentShape(Rectangle())
                     .gesture(drag(w: w, h: h), including: isDrift ? .none : .all)
                     .simultaneousGesture(pinch, including: isDrift ? .none : .all)
-                    .onTapGesture(count: 2) {
-                        if !isDrift {
-                            fitCueTask?.cancel()
-                            showFitCue = false
-                            model.resetPosition()
+                    // One image: double-tap switches between the whole photo and a crop
+                    // centred where you tapped. Slides: back to filling the frame.
+                    .onTapGesture(count: 2) { location in
+                        guard !isDrift else { return }
+                        // the ratio corner (its 64 pt square) keeps its own taps
+                        let inCorner = location.x > photoLeft + w - 64 && location.x < photoLeft + w
+                            && location.y > photoTop + h - 64 && location.y < photoTop + h
+                        guard !inCorner else { return }
+                        doubleTapHintDone = true
+                        fitCueTask?.cancel()
+                        showFitCue = false
+                        let tap = CGPoint(x: (location.x - photoLeft) / w, y: (location.y - photoTop) / h)
+                        if model.toggleFit(at: tap) {
+                            announceFit(haptic: true)
+                        } else {
+                            UISelectionFeedbackGenerator().selectionChanged()
                         }
                     }
                     .accessibilityElement(children: .ignore)
@@ -390,36 +425,34 @@ struct CanvasView: View {
             }
             .clipped()
             .padding(.bottom, bottomInset)
-            if showsInfoRow {
-                VStack(spacing: 2) {
-                    HStack(spacing: 12) {
-                            if model.tallWarning {
-                                Button { onExplain?() } label: {
-                                    Image(systemName: "exclamationmark.circle")
-                                        .font(.system(size: 13, weight: .semibold))
-                                        .foregroundStyle(.orange)
-                                        .frame(width: 24, height: 44)
-                                }
-                                .buttonStyle(.plain)
-                                .accessibilityLabel("4:5 warning")
-                                .accessibilityHint("Opens Help")
+            VStack(spacing: 2) {
+                HStack(spacing: 12) {
+                        if model.tallWarning {
+                            Button { onExplain?() } label: {
+                                Image(systemName: "exclamationmark.circle")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(.orange)
+                                    .frame(width: 24, height: 44)
                             }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("4:5 warning")
+                            .accessibilityHint("Opens Help")
+                        }
 
-                        if model.mode == .drift {
-                            Text(model.sizeText).font(.footnote).foregroundStyle(DS.secondary)
-                        } else {
-                            SizeControl(model: model)
-                            if model.leavesGap {
-                                FillControl(model: model)
-                            }
+                    if model.mode == .drift {
+                        Text(model.sizeText).font(.footnote).foregroundStyle(DS.secondary)
+                    } else {
+                        SizeControl(model: model)
+                        if model.leavesGap {
+                            FillControl(model: model)
                         }
                     }
                 }
-                .padding(.horizontal, 12).padding(.bottom, 6)
             }
+            .padding(.horizontal, 12).padding(.bottom, 6)
+
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(inset)
         .background(DS.bg)
         .clipped()
     }
@@ -457,18 +490,26 @@ struct CanvasView: View {
     /// A clear band that turns a horizontal drag into +-1 slide, starting from the nearest cut.
     private func dividerBand(w: CGFloat, n: Int) -> some View {
         Color.clear
-            .frame(height: 26)
+            .frame(height: gripBand + 8)
             .contentShape(Rectangle())
+            .onTapGesture(count: 2) {}   // the grips only drag; keep double-tap off the photo
             .gesture(
-                DragGesture(minimumDistance: 6)
+                // Global space: the band moves as the slide count reshapes the photo.
+                DragGesture(minimumDistance: 6, coordinateSpace: .global)
                     .onChanged { value in
                         slidesHintDone = true
-                        if countStart == nil { countStart = n }
+                        if countStart == nil { countStart = n; dialPhaseStart = dialPhase }
                         guard let start = countStart else { return }
+                        // the ridges roll with the finger, like turning a crown
+                        dialPhase = (dialPhaseStart ?? 0) + value.translation.width / (gripSize.width / 2)
                         let steps = Int((value.translation.width / 46).rounded())
-                        model.setCount(min(maxSlides, max(1, start + steps)))
+                        let next = min(maxSlides, max(1, start + steps))
+                        if next != model.layout.n {
+                            UISelectionFeedbackGenerator().selectionChanged()   // one detent per slide
+                            model.setCount(next)
+                        }
                     }
-                    .onEnded { _ in countStart = nil }
+                    .onEnded { _ in countStart = nil; dialPhaseStart = nil }
             )
     }
 
@@ -546,16 +587,22 @@ struct CanvasView: View {
             .onEnded { _ in
                 let snapped = model.snapToFitIfClose()
                 pinchStart = nil
-                showFitCue = snapped
-                if snapped {
-                    UIAccessibility.post(notification: .announcement, argument: "Fit. Whole photo visible.")
-                    fitCueTask = Task {
-                        try? await Task.sleep(for: .seconds(1))
-                        guard !Task.isCancelled else { return }
-                        showFitCue = false
-                    }
-                }
+                showFitCue = false
+                if snapped { announceFit(haptic: false) }   // the haptic already fired on approach
             }
+    }
+
+    /// The "Fit · whole photo" cue for a second, shared by the pinch snap and double-tap.
+    private func announceFit(haptic: Bool) {
+        fitCueTask?.cancel()
+        if haptic { UISelectionFeedbackGenerator().selectionChanged() }
+        showFitCue = true
+        UIAccessibility.post(notification: .announcement, argument: "Fit. Whole photo visible.")
+        fitCueTask = Task {
+            try? await Task.sleep(for: .seconds(1))
+            guard !Task.isCancelled else { return }
+            showFitCue = false
+        }
     }
 }
 
@@ -563,89 +610,22 @@ struct Controls: View {
     @Bindable var model: EditorModel
     var compact = false
     var accent: Color = DS.ink
-    /// True in the two-pane layout, where the pane takes the controls the narrow
-    /// layout keeps in the line under the photo.
-    var roomy = false
     var onExplain: (() -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             if model.geo != nil, model.mode == .drift { driftControls }
-            if roomy, model.geo != nil, model.mode != .drift {
-                slideGroup
-            }
 
             if let s = model.status { Text(s).font(.footnote).foregroundStyle(.secondary) }
         }
-    }
-
-    // MARK: Slide and photo
-
-    @ViewBuilder
-    private var slideGroup: some View {
-        group {
-            if model.mode == .split {
-                controlRow("Slides") {
-                    Picker("Slides", selection: Binding(get: { model.layout.n },
-                                                        set: { model.setCount($0) })) {
-                        ForEach(1...maxSlides, id: \.self) { n in Text("\(n)").tag(n) }
-                    }
-                    .pickerStyle(.segmented)
-                    .fixedSize(horizontal: true, vertical: false)
-                    .accessibilityLabel("Slides")
-                }
-            }
-            controlRow("Shape") {
-                AdaptivePicker("Shape", selection: Binding(get: { model.layout.shape },
-                                                           set: { model.setShape($0) })) {
-                    ForEach(shapeChoices) { Text($0.rawValue).tag($0) }
-                }
-            }
-            controlRow("Size") {
-                SizeControl(model: model)
-            }
-            if model.leavesGap {
-                controlRow("Empty") {
-                    FillControl(model: model)
-                }
-            }
-            if model.tallWarning {
-                Button { onExplain?() } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "exclamationmark.circle.fill")
-                            .foregroundStyle(.orange)
-                        Text("Taller than 4:5. It may be cropped when you post.")
-                            .font(.footnote)
-                            .foregroundStyle(DS.secondary)
-                            .multilineTextAlignment(.leading)
-                        Spacer(minLength: 0)
-                    }
-                }
-                .buttonStyle(.plain)
-            }
-        }
-    }
-
-    private var shapeChoices: [Shape] {
-        model.mode == .split ? [.auto, .r45, .r34, .r11] : [.r45, .r34, .r11]
     }
 
     // MARK: Drift
 
     @ViewBuilder
     private var driftControls: some View {
+        // The pan always crosses the whole photo with a gentle push-in; only timing is set here.
         group {
-            HStack(spacing: 10) {
-                rowLabel("Pan").frame(width: 58, alignment: .leading)
-                RangeSlider(lower: $model.drift.p0, upper: $model.drift.p1, accent: accent)
-                    .frame(height: 34)
-            }
-
-            inlineSlider("Zoom to", value: Binding(get: { model.drift.z1 },
-                                                  set: { model.drift.z1 = $0; model.drift.z0 = 1 }),
-                         range: 1...1.6,
-                         text: "\(Int((model.drift.z1 * 100).rounded()))%")
-
             inlineSlider("Length", value: Binding(get: { model.drift.dur },
                                                  set: { model.drift.dur = $0.rounded(); model.driftT = min(model.driftT, model.drift.dur) }),
                          range: 3...30,
@@ -668,16 +648,6 @@ struct Controls: View {
 
     private func rowLabel(_ text: String) -> some View {
         Text(text).font(.footnote).foregroundStyle(DS.secondary)
-    }
-
-    /// Label, then the control, all flush left: the controls line up on one edge.
-    private func controlRow<Content: View>(_ label: String,
-                                           @ViewBuilder _ control: () -> Content) -> some View {
-        HStack(spacing: 10) {
-            rowLabel(label).frame(width: 58, alignment: .leading)
-            control()
-            Spacer(minLength: 0)
-        }
     }
 
     private func rowValue(_ text: String) -> some View {
@@ -741,38 +711,10 @@ struct FillControl: View {
         .accessibilityLabel("Empty space")
         .sheet(isPresented: $shows) {
             FillSheet(model: model)
-                .presentationDetents([.height(190)])
+                .presentationDetents([.height(230)])
                 .presentationCornerRadius(22)
                 .presentationDragIndicator(.visible)
         }
-    }
-}
-
-/// Keeps all choices visible when they fit, and uses a native menu on narrow screens or larger text sizes.
-struct AdaptivePicker<Selection: Hashable, Choices: View>: View {
-    let title: String
-    @Binding var selection: Selection
-    @ViewBuilder var choices: () -> Choices
-    @Environment(\.dynamicTypeSize) private var typeSize
-
-    init(_ title: String, selection: Binding<Selection>, @ViewBuilder choices: @escaping () -> Choices) {
-        self.title = title
-        _selection = selection
-        self.choices = choices
-    }
-
-    var body: some View {
-        ViewThatFits(in: .horizontal) {
-            if !typeSize.isAccessibilitySize {
-                Picker(title, selection: $selection, content: choices)
-                    .pickerStyle(.segmented)
-                    .fixedSize(horizontal: true, vertical: false)
-            }
-            Picker(title, selection: $selection, content: choices)
-                .pickerStyle(.menu)
-                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -781,79 +723,12 @@ private struct ControlsHeightKey: PreferenceKey {
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
 }
 
-/// Two knobs on one track: the start and the end of the drift pan.
-struct RangeSlider: View {
-    @Binding var lower: Double
-    @Binding var upper: Double
-    var range: ClosedRange<Double> = 0...1
-    var accent: Color = DS.ink
-    var onEdit: (() -> Void)?
-
-    private let knobWidth: CGFloat = 28
-    private let knobHeight: CGFloat = 28
-
-    var body: some View {
-        GeometryReader { geo in
-            let width = geo.size.width
-            let span = range.upperBound - range.lowerBound
-            let usable = max(1, width - knobWidth)
-            let lx = CGFloat((lower - range.lowerBound) / span) * usable
-            let ux = CGFloat((upper - range.lowerBound) / span) * usable
-            let lo = min(lx, ux), hi = max(lx, ux)
-
-            ZStack(alignment: .leading) {
-                Capsule().fill(DS.stroke)
-                    .frame(height: 4)
-                    .padding(.horizontal, knobWidth / 2)
-                Capsule().fill(accent)
-                    .frame(width: hi - lo, height: 4)
-                    .offset(x: lo + knobWidth / 2)
-
-                knobView(isStart: true)
-                    .offset(x: lx)
-                    .gesture(drag(width: usable, isLower: true))
-                    .accessibilityLabel("Start")
-                    .accessibilityValue("\(Int(lower * 100)) percent")
-
-                knobView(isStart: false)
-                    .offset(x: ux)
-                    .gesture(drag(width: usable, isLower: false))
-                    .accessibilityLabel("End")
-                    .accessibilityValue("\(Int(upper * 100)) percent")
-            }
-        }
-    }
-
-    /// As close to the system thumb as a custom control gets: the same proportion,
-    /// a glassy fill and the same soft shadow. The start one carries an accent dot.
-    private func knobView(isStart: Bool) -> some View {
-        Circle()
-            .fill(.white.opacity(0.86))
-            .background(.ultraThinMaterial, in: Circle())
-            .frame(width: knobWidth, height: knobHeight)
-            .shadow(color: .black.opacity(0.16), radius: 5, y: 1.5)
-            .overlay {
-                if isStart {
-                    Circle().fill(accent).frame(width: 6, height: 6)
-                }
-            }
-    }
-
-    private func drag(width: CGFloat, isLower: Bool) -> some Gesture {
-        DragGesture(minimumDistance: 0)
-            .onChanged { value in
-                let span = range.upperBound - range.lowerBound
-                let x = (isLower ? CGFloat((lower - range.lowerBound) / span) * width : CGFloat((upper - range.lowerBound) / span) * width)
-                let next = (x + value.translation.width) / width
-                let v = range.lowerBound + Double(min(max(next, 0), 1)) * span
-                if isLower { lower = (v * 100).rounded() / 100 } else { upper = (v * 100).rounded() / 100 }
-                onEdit?()
-            }
-    }
-}
-
 private struct FillSheet: View {
     @Bindable var model: EditorModel
+
+    private var isCustom: Bool {
+        model.look.fill == .color && !Palette.all.contains { $0.hex == model.look.colorHex.uppercased() }
+    }
 
     var body: some View {
         ScrollView {
@@ -862,10 +737,43 @@ private struct FillSheet: View {
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(DS.secondary)
 
-            Picker("Fill", selection: $model.look.fill) {
-                ForEach(Fill.allCases) { Text($0.rawValue).tag($0) }
+            // Every choice is a swatch: blur, black, white, the palette, then a custom colour.
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 7),
+                      spacing: 14) {
+                FillSwatch(name: "Blur", selected: model.look.fill == .blur) {
+                    if let preview = model.preview {
+                        Image(uiImage: preview).resizable().scaledToFill().blur(radius: 3)
+                    } else {
+                        LinearGradient(colors: [DS.secondary, DS.stroke], startPoint: .top, endPoint: .bottom)
+                    }
+                } action: { model.look.fill = .blur }
+
+                FillSwatch(name: "Black", selected: model.look.fill == .black) {
+                    Color.black
+                } action: { model.look.fill = .black }
+
+                FillSwatch(name: "White", selected: model.look.fill == .white) {
+                    Color.white
+                } action: { model.look.fill = .white }
+
+                ForEach(Palette.all, id: \.hex) { swatch in
+                    FillSwatch(name: swatch.name,
+                               selected: model.look.fill == .color
+                                   && model.look.colorHex.uppercased() == swatch.hex) {
+                        Color(UIColor(hex: swatch.hex))
+                    } action: {
+                        model.look.colorHex = swatch.hex
+                        model.look.fill = .color
+                    }
+                }
+
+                ColorPicker("Custom", selection: Binding(
+                    get: { Color(UIColor(hex: model.look.colorHex)) },
+                    set: { model.look.colorHex = UIColor($0).hexString; model.look.fill = .color }))
+                    .labelsHidden()
+                    .padding(3)
+                    .overlay { Circle().stroke(DS.ink, lineWidth: isCustom ? 2 : 0) }
             }
-            .pickerStyle(.segmented)
 
             if model.look.fill == .blur {
                 HStack(spacing: 12) {
@@ -876,29 +784,35 @@ private struct FillSheet: View {
                         .frame(width: 34, alignment: .trailing)
                 }
             }
-
-            if model.look.fill == .color {
-                HStack(spacing: 10) {
-                    ForEach(Palette.all, id: \.hex) { swatch in
-                        Button { model.look.colorHex = swatch.hex } label: {
-                            PaletteDot(hex: swatch.hex,
-                                       selected: model.look.colorHex.uppercased() == swatch.hex)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(swatch.name)
-                    }
-                    Spacer(minLength: 4)
-                    ColorPicker("Custom", selection: Binding(
-                        get: { Color(UIColor(hex: model.look.colorHex)) },
-                        set: { model.look.colorHex = UIColor($0).hexString }))
-                        .labelsHidden()
-                }
-            }
         }
         .padding(.horizontal, 18).padding(.top, 16)
         .frame(maxWidth: .infinity, alignment: .topLeading)
         }
         .scrollBounceBehavior(.basedOnSize)
         .background(DS.bg)
+    }
+}
+
+/// One round choice in the fill sheet. The ring sits outside the dot, so it shows on
+/// dark colours too; a hairline keeps white visible on the light sheet.
+private struct FillSwatch<Content: View>: View {
+    let name: String
+    let selected: Bool
+    @ViewBuilder let content: () -> Content
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            content()
+                .frame(width: 30, height: 30)
+                .clipShape(Circle())
+                .overlay { Circle().strokeBorder(DS.stroke, lineWidth: 0.5) }
+                .padding(3)
+                .overlay { Circle().stroke(DS.ink, lineWidth: selected ? 2 : 0) }
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(name)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }

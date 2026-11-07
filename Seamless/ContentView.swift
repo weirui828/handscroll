@@ -46,10 +46,8 @@ struct ContentView: View {
                let mode = args[i + 1] == "Video" ? Mode.drift : Mode(rawValue: args[i + 1]) {
                 editor.mode = mode == .drift ? .drift : .split
                 if mode == .fit || mode == .crop {
-                    editor.setCount(1)
-                    if mode == .fit, let geo = editor.geo, let frame = editor.currentFrame {
-                        editor.setZoom(geo.fitZoom(frame))
-                    }
+                    editor.setCount(1)                       // one slide starts fitted
+                    if mode == .crop { editor.setZoom(1) }     // filled, for the crop screenshot
                 }
             }
             if args.contains("-demoBatch") { showBatch = true }

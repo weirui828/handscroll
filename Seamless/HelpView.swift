@@ -41,8 +41,7 @@ enum HelpTopic: String, CaseIterable, Identifiable {
     }
 }
 
-/// The manual: an index of topics that pushes into a chapter. On a wide enough
-/// window the index and the chapter sit side by side.
+/// The manual: an index of topics that pushes into a chapter.
 struct HelpView: View {
     let open: HelpTopic?
     let anchor: String?
@@ -66,29 +65,11 @@ struct HelpView: View {
     }
 
     var body: some View {
-        GeometryReader { geo in
-            let wide = fitsTwoPanes(width: geo.size.width, height: geo.size.height)
-            VStack(spacing: 0) {
-                bar(wide: wide)
-                if wide {
-                    HStack(spacing: 0) {
-                        HelpSidebar(selection: Binding(get: { topic ?? .basics },
-                                                       set: { topic = $0 }))
-                            .frame(width: min(300, geo.size.width * 0.32))
-                        Divider().overlay(DS.stroke)
-                        HelpChapterView(topic: topic ?? .basics, anchor: anchor,
-                                        accentHex: $accentHex,
-                                        onSelect: { topic = $0 },
-                                        onOpenMode: onOpenMode,
-                                        onOpenBatch: onOpenBatch)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    }
-                } else if let topic {
+        VStack(spacing: 0) {
+                bar
+                if let topic {
                     HelpChapterView(topic: topic, anchor: anchor,
                                     accentHex: $accentHex,
-                                    onSelect: { picked in
-                                        withAnimation(.easeOut(duration: 0.18)) { self.topic = picked }
-                                    },
                                     onOpenMode: onOpenMode,
                                     onOpenBatch: onOpenBatch)
                 } else {
@@ -98,13 +79,12 @@ struct HelpView: View {
                 }
             }
             .background(DS.bg)
-        }
         .tint(Color(UIColor(hex: accentHex)))
     }
 
-    private func bar(wide: Bool) -> some View {
+    private var bar: some View {
         HStack(spacing: 8) {
-            if !wide, topic != nil {
+            if topic != nil {
                 Button { withAnimation(.easeOut(duration: 0.18)) { topic = nil } } label: {
                     Label("All topics", systemImage: "chevron.left")
                         .font(.subheadline)
@@ -168,48 +148,12 @@ private struct HelpHome: View {
     }
 }
 
-private struct HelpSidebar: View {
-    @Binding var selection: HelpTopic
-
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 2) {
-                ForEach(HelpTopic.allCases) { topic in
-                    row(topic)
-                }
-            }
-            .padding(8)
-        }
-        .background(DS.bar)
-    }
-
-    private func row(_ topic: HelpTopic) -> some View {
-        let isSelected = selection == topic
-        return Button { selection = topic } label: {
-            HStack(spacing: 10) {
-                Image(systemName: topic.symbol)
-                    .font(.system(size: 13, weight: .medium))
-                    .frame(width: 22)
-                Text(topic.title).font(.subheadline)
-                Spacer(minLength: 0)
-            }
-            .foregroundStyle(isSelected ? DS.text : DS.secondary)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 9)
-            .background(isSelected ? DS.card : Color.clear, in: RoundedRectangle(cornerRadius: 8))
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-    }
-}
-
 // MARK: - Chapter
 
 private struct HelpChapterView: View {
     let topic: HelpTopic
     let anchor: String?
     @Binding var accentHex: String
-    let onSelect: (HelpTopic) -> Void
     let onOpenMode: (Mode) -> Void
     let onOpenBatch: () -> Void
 
@@ -223,7 +167,6 @@ private struct HelpChapterView: View {
                     } else {
                         content
                         openButton
-                        related
                     }
                 }
                 .padding(20)
@@ -257,7 +200,7 @@ private struct HelpChapterView: View {
             section("Move and zoom") {
                 bullets(["Drag the photo to move it.",
                          "Pinch to zoom.",
-                         "Double-tap to go back to the start."])
+                         "Double-tap to switch between the whole photo and a crop around the spot you tap. With slides, double-tap fills the frame again."])
             }
 
             section("Shape") {
@@ -290,7 +233,7 @@ private struct HelpChapterView: View {
             section("Choose the number of slides") {
                 steps(["Drag either small handle right to add slides, or left to remove them.",
                        "At one slide, both handles stay centered and the dashed line disappears.",
-                       "Pinch out to show the whole photo, or pinch in to crop it."])
+                       "One slide starts with the whole photo on a blur. Pinch in to crop it."])
                 paragraph("The line under the photo shows the size of each slide.")
             }
             section("Frame the image") {
@@ -307,13 +250,8 @@ private struct HelpChapterView: View {
             section("Play") {
                 paragraph("Tap the play button in the middle of the photo. A thin bar at the bottom shows the position; tap again to pause.")
             }
-            section("Pan") {
-                bullets(["The two ends set where the video starts and ends.",
-                         "The start end has a small dot.",
-                         "Drag the start end past the other to play in reverse."])
-            }
-            section("Zoom, length and ease") {
-                bullets(["**Zoom to** sets the zoom at the end; the video always starts at 100%.",
+            section("Length and ease") {
+                bullets(["The video moves across the whole photo, left to right, with a gentle zoom in.",
                          "**Length** sets 3 to 30 seconds.",
                          "**Ease in and out** makes the movement start and stop slowly."])
             }
@@ -338,7 +276,7 @@ private struct HelpChapterView: View {
             section("Run") {
                 steps(["Tap **Add photos** and pick up to 10 photos.",
                        "Each photo shows one result for each step.",
-                       "Tap **Make files**."])
+                       "Tap **Run**."])
             }
             section("Adjust one photo") {
                 steps(["Tap a result.",
@@ -379,39 +317,6 @@ private struct HelpChapterView: View {
                 .background(DS.ink, in: RoundedRectangle(cornerRadius: 12))
             }
             .buttonStyle(.plain)
-        }
-    }
-
-    private var related: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Related").font(.footnote.weight(.semibold)).foregroundStyle(DS.secondary)
-            ForEach(relatedTopics) { topic in
-                Button { onSelect(topic) } label: {
-                    HStack {
-                        Text(topic.title).font(.subheadline).foregroundStyle(DS.text)
-                        Spacer(minLength: 0)
-                        Image(systemName: "chevron.right")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(DS.secondary)
-                    }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 11)
-                    .background(DS.card, in: RoundedRectangle(cornerRadius: 10))
-                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(DS.stroke, lineWidth: 1))
-                    .contentShape(RoundedRectangle(cornerRadius: 10))
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(.top, 4)
-    }
-
-    private var relatedTopics: [HelpTopic] {
-        switch topic {
-        case .basics: [.photo, .drift]
-        case .photo, .drift: [.basics]
-        case .batch: [.basics]
-        case .settings: []
         }
     }
 
@@ -467,6 +372,7 @@ private struct HelpSettings: View {
     @Binding var accentHex: String
     @AppStorage("seamless.hint.slides") private var slidesHintDone = false
     @AppStorage("seamless.hint.shape") private var shapeHintDone = false
+    @AppStorage("seamless.hint.doubletap") private var doubleTapHintDone = false
     @State private var hintsReset = false
 
     private var swatches: [Palette.Swatch] {
@@ -519,6 +425,7 @@ private struct HelpSettings: View {
             Button {
                 slidesHintDone = false
                 shapeHintDone = false
+                doubleTapHintDone = false
                 hintsReset = true
                 Task {
                     try? await Task.sleep(for: .seconds(2))

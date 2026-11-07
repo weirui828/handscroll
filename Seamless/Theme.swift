@@ -42,6 +42,25 @@ struct PrimaryButton: ButtonStyle {
     }
 }
 
+/// The compact capsule used for actions inside a card: ink-filled for the main action,
+/// a quiet tint for the rest. Same height and type, so neighbours read as one set.
+struct PillButton: ButtonStyle {
+    var prominent = false
+    @Environment(\.isEnabled) private var enabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.subheadline.weight(.semibold))
+            .monospacedDigit()
+            .foregroundStyle(prominent ? DS.onInk : DS.text)
+            .padding(.horizontal, 14)
+            .frame(minHeight: 34)
+            .background(prominent ? DS.ink : DS.stroke, in: Capsule())
+            .opacity(configuration.isPressed || !enabled ? 0.55 : 1)
+            .contentShape(Capsule())
+    }
+}
+
 /// The low-chroma palette from the site, used for the empty space around a photo.
 /// One palette colour, ringed when it is the current choice.
 struct PaletteDot: View {
@@ -75,6 +94,6 @@ enum Palette {
         .init(name: "Sand",  hex: "#D6D2C4"),   // Pantone 7527 C
         .init(name: "Clay",  hex: "#AE8A79"),   // Pantone 4725 C
         .init(name: "Rose",  hex: "#C4A4A7"),   // Pantone 7633 C
-        .init(name: "Mauve", hex: "#AD96DC"),   // Pantone 2645 C
+        .init(name: "Mauve", hex: "#A893AD"),   // Pantone 666 C
     ]
 }

@@ -8,6 +8,7 @@ struct SeamlessApp: App {
         if ProcessInfo.processInfo.arguments.contains("-demoClean") {
             UserDefaults.standard.set(true, forKey: "seamless.hint.slides")
             UserDefaults.standard.set(true, forKey: "seamless.hint.shape")
+            UserDefaults.standard.set(true, forKey: "seamless.hint.doubletap")
         }
     }
     #endif

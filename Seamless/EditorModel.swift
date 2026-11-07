@@ -123,11 +123,22 @@ final class EditorModel {
         return geo.hasGap(geo.place(layout, f), f)
     }
 
-    /// One output image, or two through five carousel slides.
+    /// One output image, or two through five carousel slides. One image starts with the
+    /// whole photo fitted; going back to slides fills the frame again.
     func setCount(_ n: Int) {
         var l = layout
+        let old = l.n
         l.n = min(maxSlides, max(1, n))
         l.nPicked = true
+        if l.n != old, let geo {
+            if l.n == 1 {
+                l.ox = 0; l.oy = 0
+                l.zoom = geo.fitZoom(geo.frame(l, outW: previewPanelWidth))
+            } else if old == 1, l.zoom < 1 {
+                l.ox = 0; l.oy = 0
+                l.zoom = 1
+            }
+        }
         layouts[mode] = l
         clampLayout()
     }
@@ -165,10 +176,42 @@ final class EditorModel {
         clampLayout()
     }
 
-    /// Back to the starting position of the current mode.
+    /// Double-tap: one image switches between the whole photo and a crop centred on the
+    /// tapped spot (`at` is a fraction of the frame); slides just go back to filling.
+    /// Returns true when the photo ends up fitted.
+    @discardableResult
+    func toggleFit(at tap: CGPoint) -> Bool {
+        guard let geo, let f = currentFrame, layout.n == 1 else { resetPosition(); return false }
+        let fit = geo.fitZoom(f)
+        var l = layout
+        let toFit = abs(l.zoom / fit - 1) > 0.01
+        if toFit {
+            l.zoom = fit
+            l.ox = 0; l.oy = 0
+        } else {
+            // the photo point under the finger, then the offset that centres it at zoom 1
+            let p = geo.place(l, f)
+            let px = clamp((tap.x * f.fw - p.x) / p.k, 0, geo.W)
+            let py = clamp((tap.y * f.fh - p.y) / p.k, 0, geo.H)
+            let k1 = geo.coverK(f)
+            l.zoom = 1
+            l.ox = k1 * (geo.W / 2 - px) / f.fw
+            l.oy = k1 * (geo.H / 2 - py) / f.fh
+        }
+        layouts[mode] = l
+        clampLayout()
+        return toFit
+    }
+
+    /// Back to the default framing: the whole photo for one image, filled slides otherwise.
     func resetPosition() {
         var l = layout
-        l.ox = 0; l.oy = 0; l.zoom = 1
+        l.ox = 0; l.oy = 0
+        if l.n == 1, let geo {
+            l.zoom = geo.fitZoom(geo.frame(l, outW: previewPanelWidth))
+        } else {
+            l.zoom = 1
+        }
         layouts[mode] = l
         clampLayout()
     }

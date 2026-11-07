@@ -193,7 +193,7 @@ final class BatchModel {
         defer { busy = false; progress = nil }
         do {
             for p in photos where p.thumb != nil {
-                progress = "Exporting \(min(done + 1, total)) of \(total)…"
+                progress = "\(min(done + 1, total)) of \(total)…"
                 guard let full = await Self.load(p.item, cap: maxPixels) else { continue }
                 for (si, step) in steps.enumerated() {
                     let s = spec(p, full, step)
@@ -202,7 +202,7 @@ final class BatchModel {
                         let r = s.drift, base = p.base, count = min(done + 1, total), all = total
                         let url = try await Task.detached(priority: .userInitiated) {
                             try await Exporter.drift(photo: full, drift: r, name: "\(base)_\(si + 1)-video", dir: dir) { x in
-                                Task { @MainActor in self.progress = "Exporting \(count) of \(all) · \(Int(x * 100))%" }
+                                Task { @MainActor in self.progress = "\(count) of \(all) · \(Int(x * 100))%" }
                             }
                         }.value
                         out.append(url)
@@ -215,7 +215,7 @@ final class BatchModel {
                         out += urls
                         done += urls.count
                     }
-                    progress = "Exporting \(min(done + 1, total)) of \(total)…"
+                    progress = "\(min(done + 1, total)) of \(total)…"
                 }
             }
             results = out

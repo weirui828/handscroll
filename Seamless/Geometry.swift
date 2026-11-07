@@ -14,12 +14,6 @@ let maxSlides = 5     // one image or up to five carousel slides
 let driftSize = CGSize(width: 1080, height: 1920)
 let driftFPS = 30
 
-/// A window that should split into two panes: wide enough for both, and clearly
-/// wider than tall so the split runs down the long edge.
-func fitsTwoPanes(width: CGFloat, height: CGFloat, minWidth: CGFloat = 520) -> Bool {
-    width >= minWidth && width > height * 1.05
-}
-
 enum Mode: String, CaseIterable, Identifiable, Codable {
     // Fit and Crop remain decodable for batches saved before Photo unified the editor.
     case split = "Split", fit = "Fit", crop = "Crop", drift = "Drift"   // shown as Video; the stored value stays for saved batches

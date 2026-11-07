@@ -9,39 +9,16 @@ struct BatchView: View {
     @State private var showSaveResult = false
 
     var body: some View {
-        GeometryReader { geo in
-            let wide = fitsTwoPanes(width: geo.size.width, height: geo.size.height, minWidth: 700)
-            Group {
-                if wide {
-                    // steps on the left, the photos and the run button on the right, so a fold
-                    // never cuts through a thumbnail row
-                    HStack(alignment: .top, spacing: 0) {
-                        ScrollView {
-                            stepsSection.padding().frame(maxWidth: 420, alignment: .leading)
-                        }
-                        Divider()
-                        ScrollView {
-                            VStack(alignment: .leading, spacing: 20) { photosSection; runSection }
-                                .padding()
-                                .frame(maxWidth: 620, alignment: .leading)
-                        }
-                        .scrollBounceBehavior(.basedOnSize)
-                    }
-                } else {
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 20) {
-                            stepsSection
-                            photosSection
-                            runSection
-                        }
-                        .padding()
-                        .frame(maxWidth: 900)
-                        .frame(maxWidth: .infinity)
-                    }
-                    .scrollBounceBehavior(.basedOnSize)
-                }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                stepsSection
+                photosSection
+                runSection
             }
+            .padding()
+            .frame(maxWidth: .infinity)
         }
+        .scrollBounceBehavior(.basedOnSize)
         .navigationTitle("Batch")
         .navigationBarTitleDisplayMode(.inline)
         .background(DS.bg)
@@ -93,13 +70,13 @@ struct BatchView: View {
     private var photosSection: some View {
         card("Photos · \(batch.photos.count) of \(maxPhotos)") {
             HStack {
-                Spacer()
                 PhotosPicker(selection: $picks, maxSelectionCount: max(1, maxPhotos - batch.photos.count),
                              matching: .images, photoLibrary: .shared()) {
-                    Label("Add photos", systemImage: "plus").frame(minHeight: 32)
+                    Label("Add photos", systemImage: "plus")
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(PillButton())
                 .disabled(batch.photos.count >= maxPhotos)
+                Spacer()
             }
             if let w = batch.warning { Text(w).font(.footnote).foregroundStyle(.orange) }
             ForEach(batch.photos) { photo in
@@ -149,10 +126,19 @@ struct BatchView: View {
     }
 
     private var runSection: some View {
-        card("Export") {
-            Text(batch.estimateText).font(.footnote).foregroundStyle(DS.secondary)
+        card("Output") {
+            // With nothing to make yet there is no estimate, so Run sits right under the title.
+            if !batch.estimateText.isEmpty {
+                Text(batch.estimateText).font(.footnote).foregroundStyle(DS.secondary)
+            }
+            // Run leads; once files exist, save and share sit right after it.
             HStack(spacing: 2) {
-                Spacer(minLength: 8)
+                Button { Task { await batch.run() } } label: {
+                    Text(batch.progress ?? "Run")
+                }
+                .buttonStyle(PillButton(prominent: true))
+                .disabled(!batch.canRun)
+                .padding(.trailing, 6)
                 if !batch.results.isEmpty && !batch.busy {
                     Button { Task {
                         await batch.saveToPhotos()
@@ -168,11 +154,7 @@ struct BatchView: View {
                     .buttonStyle(QuietBarButton())
                     .accessibilityLabel("Share")
                 }
-                Button { Task { await batch.run() } } label: {
-                    Text(batch.progress ?? "Make files")
-                }
-                .buttonStyle(PrimaryButton())
-                .disabled(!batch.canRun)
+                Spacer(minLength: 0)
             }
             if let s = batch.status { Text(s).font(.footnote).foregroundStyle(DS.secondary) }
         }
